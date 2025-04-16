@@ -9,6 +9,16 @@
 
 
 using namespace std;
+
+float activity_function(float x) {
+	// Example activation function (ReLU_Leaky)
+	return x > 0 ? x : 0.001*x;
+}
+float activity_function_derivative(float x) {
+	// Derivative of the activation function (ReLU_Leaky)
+	return x > 0 ? 1 : 0.001;
+}
+
 float random_normal_float(float mean, float stddev) {
 	static std::random_device rd;
 	static std::mt19937 gen(rd());
@@ -32,7 +42,7 @@ public:
 	// Forward pass
 	virtual void forward(const Tensor& input,Tensor& output) = 0;
 	// Backward pass
-	virtual void backward(const Tensor& grad_output, Tensor& output) = 0;
+	virtual void backward(const Tensor& grad_output, Tensor& grad_input) = 0;
 	// Update weights
 	virtual void update(float learning_rate) = 0;
 };
@@ -62,14 +72,21 @@ public:
 		// Perform forward 
 		// pass using weights and biases
 		for (int i = 0; i < output_size; ++i) {
-			output.get({ i }) = biases[i];
+			
+			float sum = 0;
 			for (int j = 0; j < input_size; ++j) {
-				output.get({ i }) += weights[i][j] * input.get({ j });
+				sum += weights[i][j] * input.get({ j });
 			}
+
+
+			output.get({ i }) = activity_function(sum + biases[i]);
+
+			output.get({ i }) = sum + biases[i];
+
 		}
 	}
 	// Backward pass
-	void backward(const Tensor& grad_output, Tensor& output) override {
+	void backward(const Tensor& grad_output, Tensor& grad_input) override {
 		// Perform backward pass
 	}
 	// Update weights
@@ -81,7 +98,11 @@ private:
 	int output_size;
 	std::vector<vector<float>> weights; //weights are stored in a vector
 	std::vector<float> biases; //biases are stored in a vector
+	std::vector<float> grad_weights; //grad_weights are stored in a vector
+	std::vector<float> grad_biases; //grad_biases are stored in a vector
 };
+
+
 //model is a class that contains layers
 
 class model {
@@ -97,7 +118,7 @@ public:
 	}
 	// Add a layer to the model
 	void addLayer(layer* l) {
-		layers.push_back(l);
+		
 	}
 };
 
