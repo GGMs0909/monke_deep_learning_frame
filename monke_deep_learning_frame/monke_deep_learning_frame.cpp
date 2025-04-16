@@ -62,10 +62,13 @@ public:
 		// Perform forward 
 		// pass using weights and biases
 		for (int i = 0; i < output_size; ++i) {
-			output.get({ i }) = biases[i];
+			
+			float sum = 0;
 			for (int j = 0; j < input_size; ++j) {
-				output.get({ i }) += weights[i][j] * input.get({ j });
+				sum += weights[i][j] * input.get({ j });
 			}
+
+			output.get({ i }) = sum + biases[i];
 		}
 	}
 	// Backward pass
@@ -82,6 +85,56 @@ private:
 	std::vector<vector<float>> weights; //weights are stored in a vector
 	std::vector<float> biases; //biases are stored in a vector
 };
+class convolution : public layer {
+public:
+	// Constructor
+	dense(int input_size, int output_size) : input_size(input_size), output_size(output_size) {
+		// Initialize weights and biases He initialization
+		weights = vector<vector<float>>(output_size, vector<float>(input_size, 0.0f));
+		biases.resize(output_size);
+		for (int i = 0; i < output_size; ++i) {
+			for (int j = 0; j < input_size; ++j) {
+				weights[i][j] = random_normal_float(0.0f, sqrt(2.0f / input_size));
+			}
+			biases[i] = random_normal_float(0.0f, sqrt(2.0f / input_size));
+		}
+		
+
+	}
+	// Destructor
+	~dense() {
+		// Clean up resources
+
+	}
+	// Forward pass
+	void forward(const Tensor& input,Tensor& output) override {
+		// Perform forward 
+		// pass using weights and biases
+		for (int i = 0; i < output_size; ++i) {
+			
+			float sum = 0;
+			for (int j = 0; j < input_size; ++j) {
+				sum += weights[i][j] * input.get({ j });
+			}
+
+			output.get({ i }) = sum + biases[i];
+		}
+	}
+	// Backward pass
+	void backward(const Tensor& grad_output, Tensor& output) override {
+		// Perform backward pass
+	}
+	// Update weights
+	void update(float learning_rate) override {
+		// Update weights and biases
+	}
+private:
+	int input_size;
+	int output_size;
+	std::vector<vector<float>> weights; //weights are stored in a vector
+	std::vector<float> biases; //biases are stored in a vector
+};
+
 //model is a class that contains layers
 
 class model {
