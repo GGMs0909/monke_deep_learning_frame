@@ -12,11 +12,11 @@ using namespace std;
 
 float activity_function(float x) {
 	// Example activation function (ReLU_Leaky)
-	return x > 0 ? x : 0.001*x;
+	return x > 0 ? x : 0.01*x;
 }
 float activity_function_derivative(float x) {
 	// Derivative of the activation function (ReLU_Leaky)
-	return x > 0 ? 1 : 0.001;
+	return x > 0 ? 1 : 0.01;
 }
 
 float random_normal_float(float mean, float stddev) {
@@ -72,37 +72,50 @@ public:
 		// Perform forward 
 		// pass using weights and biases
 		for (int i = 0; i < output_size; ++i) {
-			
 			float sum = 0;
 			for (int j = 0; j < input_size; ++j) {
 				sum += weights[i][j] * input.get({ j });
 			}
 
-
-			output.get({ i }) = activity_function(sum + biases[i]);
-
 			output.get({ i }) = sum + biases[i];
-
 		}
 	}
 	// Backward pass
 	void backward(const Tensor& grad_output, Tensor& grad_input) override {
 		// Perform backward pass
+		for (int i = 0; i < output_size; ++i) {
+			for (int j = 0; j < input_size; ++j) {
+				grad_weights[i][j] += grad_output.get({ i }) * grad_input.get({ j });
+			}
+			grad_biases[i] += grad_output.get({ i });
+		}
+		for (int i = 0; i < input_size; ++i) {
+			float sum = 0;
+			for (int j = 0; j < output_size; ++j) {
+				sum += grad_output.get({ j }) * weights[j][i];
+			}
+			grad_input.get({ i }) = sum;
+		}
+
 	}
 	// Update weights
 	void update(float learning_rate) override {
 		// Update weights and biases
+		for (int i = 0; i < output_size; ++i) {
+			for (int j = 0; j < input_size; ++j) {
+				weights[i][j] -= learning_rate * grad_weights[i][j];
+			}
+			biases[i] -= learning_rate * grad_biases[i];
+		}
 	}
 private:
 	int input_size;
 	int output_size;
 	std::vector<vector<float>> weights; //weights are stored in a vector
 	std::vector<float> biases; //biases are stored in a vector
-	std::vector<float> grad_weights; //grad_weights are stored in a vector
+	std::vector<vector<float>> grad_weights; //grad_weights are stored in a vector
 	std::vector<float> grad_biases; //grad_biases are stored in a vector
 };
-
-
 //model is a class that contains layers
 
 class model {
