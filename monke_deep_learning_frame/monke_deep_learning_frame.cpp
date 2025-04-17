@@ -72,17 +72,12 @@ public:
 		// Perform forward 
 		// pass using weights and biases
 		for (int i = 0; i < output_size; ++i) {
-			
 			float sum = 0;
 			for (int j = 0; j < input_size; ++j) {
 				sum += weights[i][j] * input.get({ j });
 			}
 
-
-			output.get({ i }) = activity_function(sum + biases[i]);
-
 			output.get({ i }) = sum + biases[i];
-
 		}
 	}
 	// Backward pass
@@ -101,8 +96,6 @@ private:
 	std::vector<float> grad_weights; //grad_weights are stored in a vector
 	std::vector<float> grad_biases; //grad_biases are stored in a vector
 };
-
-
 //model is a class that contains layers
 
 class model {
