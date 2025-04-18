@@ -6,7 +6,7 @@
 // 建構子：根據形狀初始化 Tensor
 Tensor::Tensor(const std::vector<int>& shape) : shape(shape) {
     calculate_strides();
-    data.resize(calculate_total_size());
+    data = std::vector<double>(calculate_total_size(),0);
 }
 
 // 建構子：從現有資料和形狀建立 Tensor (複製資料)

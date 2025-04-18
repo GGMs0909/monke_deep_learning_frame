@@ -64,7 +64,10 @@ public:
 	dense(int input_size, int output_size) : input_size(input_size), output_size(output_size) {
 		// Initialize weights and biases He initialization
 		weights = vector<Tensor>(output_size, Tensor({ input_size }));
-		biases.resize(output_size);
+		biases = vector<float>(output_size,0);
+		grad_weights = weights;
+		grad_biases = biases;
+		// Initialize weights and biases using He initialization
 		for (int i = 0; i < output_size; ++i) {
 			for (int j = 0; j < input_size; ++j) {
 				weights[i].get({j}) = random_normal_float(0.0f, sqrt(2.0f / input_size));
@@ -77,6 +80,7 @@ public:
 	// Destructor
 	~dense() {
 		// Clean up resources
+		// No dynamic memory allocation, so nothing to clean up
 
 	}
 	// Forward pass
@@ -106,7 +110,7 @@ public:
 			for (int j = 0; j < output_size; ++j) {
 				sum += grad_output.get({ j }) * weights[j].get({i});
 			}
-			grad_input.get({ i }) = sum;
+			grad_input.get({ i }) += sum;
 		}
 
 	}
@@ -121,6 +125,7 @@ public:
 		}
 	}
 private:
+	
 	int input_size;
 	int output_size;
 	vector<Tensor> weights; //weights are stored in a vector
@@ -135,8 +140,8 @@ public:
 	convolution(int input_channels, int input_size, int output_channels, int kernel_size)
 		: input_channels(input_channels), input_size(input_size), output_channels(output_channels), kernel_size(kernel_size) {
 		// Initialize weights and biases
-		weights = vector<vector<vector<vector<float>>>>(output_channels, vector<vector<vector<float>>>(input_channels, vector<vector<float>>(kernel_size, vector<float>(kernel_size))));
-		biases.resize(output_channels);
+		weights = vector<Tensor>(output_channels, Tensor({ input_channels, kernel_size, kernel_size }));
+		biases = vector<float>(output_channels,0);
 		grad_weights = weights;
 		grad_biases = biases;
 		// Initialize weights and biases using He initialization
@@ -145,7 +150,7 @@ public:
 			for (int j = 0; j < input_channels; ++j) {
 				for (int k = 0; k < kernel_size; ++k) {
 					for (int l = 0; l < kernel_size; ++l) {
-						weights[i][j][k][l] = random_normal_float(0.0f, sqrt(2.0f / (input_channels * kernel_size * kernel_size)));
+						weights[i].get({ j,k,l }) = random_normal_float(0.0f, sqrt(2.0f / (input_channels * kernel_size * kernel_size)));
 					}
 				}
 			}
@@ -167,7 +172,7 @@ public:
 						float sum = 0;
 						for (int m = 0; m < kernel_size; ++m) {
 							for (int n = 0; n < kernel_size; ++n) {
-								sum += weights[i][j][m][n] * input.get({ j, k + m, l + n });
+								sum += input.get({ j, k + m, l + n }) * weights[i].get({ j, m, n });
 							}
 						}
 						output.get({ i, k, l }) = activity_function(sum + biases[i]);
@@ -187,11 +192,11 @@ public:
 						float sum = 0;
 						for (int m = 0; m < kernel_size; ++m) {
 							for (int n = 0; n < kernel_size; ++n) {
-								sum += grad_output.get({ i, k, l }) * weights[i][j][m][n];
-								grad_weights[i][j][m][n] += grad_output.get({ i, k, l }) * grad_input.get({ j, k + m, l + n });
+								sum += grad_output.get({ i, k, l }) * weights[i].get({j,m,n});
+								grad_weights[i].get({j,m,n}) += grad_output.get({i, k, l}) * grad_input.get({j, k + m, l + n});
 							}
 						}
-						grad_input.get({ j, k, l }) += sum;
+						grad_input.get({ j, k, l }) = sum;
 					}
 				}
 			}
@@ -205,7 +210,8 @@ public:
 			for (int j = 0; j < input_channels; ++j) {
 				for (int k = 0; k < kernel_size; ++k) {
 					for (int l = 0; l < kernel_size; ++l) {
-						weights[i][j][k][l] -= learning_rate * grad_weights[i][j][k][l];
+						weights[i].get({ j, k, l }) -= learning_rate * grad_weights[i].get({ j, k, l });
+
 					}
 				}
 			}
