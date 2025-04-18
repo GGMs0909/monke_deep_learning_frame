@@ -10,16 +10,9 @@
 
 using namespace std;
 
-double activity_function(double x) {
-	// Example activation function (ReLU_Leaky)
-	return x > 0 ? x : 0.01*x;
-}
-double activity_function_derivative(double x) {
-	// Derivative of the activation function (ReLU_Leaky)
-	return x > 0 ? 1 : 0.01;
-}
 
-double random_normal_double(double mean, double stddev) {
+
+static double random_normal_double(double mean, double stddev) {
 	static std::random_device rd;
 	static std::mt19937 gen(rd());
 	std::normal_distribution<double> dist(mean, stddev);
@@ -42,21 +35,90 @@ public:
 	// Forward pass
 	virtual void forward(const Tensor& input,Tensor& output) = 0;
 	// Backward pass
-	virtual void backward(const Tensor& grad_output, Tensor& grad_input) = 0;
+	virtual void backward(const Tensor& grad_output, const Tensor& output, Tensor& grad_input) = 0;
 	// Update weights
 	virtual void update(double learning_rate) = 0;
-	// Get input size
-	int get_input_size() const {
-		return input_size;
-	}
+
 private:
 	// Private members
-	int input_size; //input size of the layer
-	int output_size; //output size of the layer
-	vector<Tensor> weights; //weights are stored in a vector
-	vector<double> biases; //biases are stored in a vector
-	vector<Tensor> grad_weights; //grad_weights are stored in a vector
-	vector<double> grad_biases; //grad_biases are stored in a vector
+	
+};
+class relu_1D : public layer {
+public:
+	relu_1D(int input_size,int output_size) : input_size(input_size), output_size(output_size) {
+		// Initialize the ReLU layer
+	}
+	// Destructor
+	~relu_1D() {
+		// Clean up resources
+	}
+	// Forward pass
+	void forward(const Tensor& input, Tensor& output) override {
+		// Perform forward pass using ReLU activation function
+		for (int i = 0; i < input_size; ++i) {
+			output.get({ i }) = std::max(0.0, input.get({ i }));
+		}
+	}
+	// Backward pass
+	void backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) override {
+		// Perform backward pass using ReLU activation function
+		for (int i = 0; i < input_size; ++i) {
+			if (input.get({ i }) > 0) {
+				grad_input.get({ i }) = grad_output.get({ i });
+			}
+			else {
+				grad_input.get({ i }) = 0;
+			}
+		}
+	}
+private:
+	int input_size;
+	int output_size;
+
+};
+class relu_3D : public layer {
+public:
+	relu_3D(int input_channels, int input_size, int output_channels) : input_channels(input_channels), input_size(input_size), output_channels(output_channels) {
+		// Initialize the ReLU layer
+	}
+	// Destructor
+	~relu_3D() {
+		// Clean up resources
+	}
+	// Forward pass
+	void forward(const Tensor& input, Tensor& output) override {
+		// Perform forward pass using ReLU activation function
+		for (int h = 0; h < output_channels; ++h) {
+			for (int r = 0; r < input_size; ++r) {
+				for (int c = 0; c < input_size; ++c) {
+					output.get({ h, r, c }) = std::max(0.0, input.get({ h, r, c }));
+				}
+			}
+		}
+	}
+	// Backward pass
+	void backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) override {
+		// Perform backward pass using ReLU activation function
+		for (int h = 0; h < output_channels; ++h) {
+			for (int r = 0; r < input_size; ++r) {
+				for (int c = 0; c < input_size; ++c) {
+					if (input.get({ h, r, c }) > 0) {
+						grad_input.get({ h, r, c }) = grad_output.get({ h, r, c });
+					}
+					else {
+						grad_input.get({ h, r, c }) = 0;
+					}
+				}
+			}
+		}
+
+	}
+private:
+	int input_channels;
+	int input_size;
+	int output_channels;
+	// Private members
+	// Add any additional private members if needed
 };
 class dense : public layer {
 public:
@@ -96,19 +158,19 @@ public:
 			output.get({ i }) = sum + biases[i];
 		}
 	}
-	// Backward pass
-	void backward(const Tensor& grad_output, Tensor& grad_input) override {
+	// Backward pass 
+	void backward(const Tensor& grad_output,const Tensor& input, Tensor& grad_input) override {
 		// Perform backward pass
 		for (int i = 0; i < output_size; ++i) {
 			for (int j = 0; j < input_size; ++j) {
-				grad_weights[i].get({j}) += grad_output.get({i}) * grad_input.get({j});
+				grad_weights[i].get({j}) += grad_output.get({i}) * input.get({j});
 			}
 			grad_biases[i] += grad_output.get({ i });
 		}
 		for (int i = 0; i < input_size; ++i) {
 			double sum = 0;
 			for (int j = 0; j < output_size; ++j) {
-				sum += grad_output.get({ j }) * weights[j].get({i});
+				sum += grad_output.get({ j }) * weights[j].get({ i });
 			}
 			grad_input.get({ i }) += sum;
 		}
@@ -165,39 +227,62 @@ public:
 	// Forward pass
 	void forward(const Tensor& input, Tensor& output) override{
 		// Perform forward pass using weights and biases
-		for (int i = 0; i < output_channels; ++i) {
-			for (int j = 0; j < input_channels; ++j) {
-				for (int k = 0; k < input_size - kernel_size + 1; ++k) {
-					for (int l = 0; l < input_size - kernel_size + 1; ++l) {
-						double sum = 0;
-						for (int m = 0; m < kernel_size; ++m) {
-							for (int n = 0; n < kernel_size; ++n) {
-								sum += input.get({ j, k + m, l + n }) * weights[i].get({ j, m, n });
+		for (int h = 0; h < output_channels; h++) {
+			for (int r = 0; r < input_size - kernel_size + 1;r++) {
+				for (int c = 0; c < input_size - kernel_size + 1;c++) {
+					double sum = 0;
+					for (int i = 0; i < input_channels; i++) {
+						for (int j = 0; j < kernel_size; j++) {
+							for (int k = 0; k < kernel_size; k++) {
+								sum += input.get({ i, r + j, c + k }) * weights[h].get({ i, j, k });
 							}
 						}
-						output.get({ i, k, l }) = activity_function(sum + biases[i]);
 					}
+					output.get({ h, r, c }) = sum + biases[h];
 				}
 			}
 		}
 		
 	}
 	// Backward pass
-	void backward(const Tensor& grad_output, Tensor& grad_input) override{
+	void backward(const Tensor& grad_output,const Tensor& input, Tensor& grad_input) override{
 		// Perform backward pass
-		for (int i = 0; i < output_channels; ++i) {
-			for (int j = 0; j < input_channels; ++j) {
-				for (int k = 0; k < input_size - kernel_size + 1; ++k) {
-					for (int l = 0; l < input_size - kernel_size + 1; ++l) {
+		for (int h = 0; h < output_channels; ++h) {
+			for (int i = 0; i < input_channels; ++i) {
+				for (int j = 0; j < kernel_size; ++j) {
+					for (int k = 0; k < kernel_size; ++k) {
 						double sum = 0;
-						for (int m = 0; m < kernel_size; ++m) {
-							for (int n = 0; n < kernel_size; ++n) {
-								sum += grad_output.get({ i, k, l }) * weights[i].get({j,m,n});
-								grad_weights[i].get({j,m,n}) += grad_output.get({i, k, l}) * grad_input.get({j, k + m, l + n});
+						for (int r = 0; r < input_size - kernel_size + 1; ++r) {
+							for (int c = 0; c < input_size - kernel_size + 1; ++c) {
+								sum += grad_output.get({ h, r, c }) * input.get({ i, r + j, c + k });
 							}
 						}
-						grad_input.get({ j, k, l }) = sum;
+						grad_weights[h].get({ i, j, k }) += sum;
 					}
+				}
+			}
+			double sum = 0;
+			for (int r = 0; r < input_size - kernel_size + 1;++r) {
+				for (int c = 0; c < input_size - kernel_size + 1;++c) {
+					sum += grad_output.get({ h, r, c });
+				}
+			}
+			grad_biases[h] += sum;
+		}
+		for (int i = 0; i < input_channels; ++i) {
+			for (int j = 0; j < input_size; ++j) {
+				for (int k = 0; k < input_size; ++k) {
+					double sum = 0;
+					for (int h = 0; h < output_channels; ++h) {
+						for (int r = 0; r < kernel_size; ++r) {
+							for (int c = 0; c < kernel_size; ++c) {
+								if (j - r >= 0 && j - r < input_size && k - c >= 0 && k - c < input_size) {
+									sum += grad_output.get({ h, j - r, k - c }) * weights[h].get({ i, r, c });
+								}
+							}
+						}
+					}
+					grad_input.get({ i, j, k }) += sum;
 				}
 			}
 		}
@@ -233,52 +318,68 @@ private:
 class pooling : public layer {
 public:
 	// Constructor
-	pooling(int input_channels, int input_size, int pool_size) : input_channels(input_channels), input_size(input_size), pool_size(pool_size) {
-		// Initialize weights and biases
-		weights = vector<Tensor>(input_channels, Tensor({ pool_size, pool_size }));
-		biases = vector<double>(input_channels, 0);
-		grad_weights = weights;
-		grad_biases = biases;
+	pooling(int input_channels, int input_size, int pool_size)
+		: input_channels(input_channels), input_size(input_size), pool_size(pool_size) {
+		
 	}
 	// Destructor
-	~pooling() {
-		// Clean up resources
-	}
+	~pooling() override {}
 	// Forward pass
 	void forward(const Tensor& input, Tensor& output) override {
-		// Perform forward pass using weights and biases
-		for (int i = 0; i < input_channels; ++i) {
-			for (int j = 0; j < input_size - pool_size + 1; ++j) {
-				for (int k = 0; k < input_size - pool_size + 1; ++k) {
-					double max_val = -std::numeric_limits<double>::max();
-					for (int m = 0; m < pool_size; ++m) {
-						for (int n = 0; n < pool_size; ++n) {
-							max_val = std::max(max_val, input.get({ i, j + m, k + n }));
+		// Store the indices of the maximum values for backward pass
+		count = vector<vector<vector<int>>>(input_channels, vector<vector<int>>(input_size - pool_size + 1, vector<int>(input_size - pool_size + 1, 0)));
+
+		for (int h = 0; h < input_channels; ++h) {
+			for (int r = 0; r < input_size - pool_size + 1; ++r) {
+				for (int c = 0; c < input_size - pool_size + 1; ++c) {
+					double max_val = input.get({ h, r, c });
+					for (int i = 0; i < pool_size; ++i) {
+						for (int j = 0; j < pool_size; ++j) {
+							if (input.get({ h, r + i, c + j }) > max_val) {
+								max_val = input.get({ h, r + i, c + j });
+							}
 						}
 					}
-					output.get({ i, j / pool_size, k / pool_size }) = max_val;
+					output.get({ h, r, c}) = max_val;
+					for (int i = 0; i < pool_size; ++i) {
+						for (int j = 0; j < pool_size; ++j) {
+							if (input.get({ h, r + i, c + j }) == max_val) {
+								count[h][r][c]++;
+							}
+						}
+					}
 				}
 			}
 		}
-
 	}
 
-	void backward(const Tensor& grad_output, Tensor& grad_input) override {
-
+	void backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) override {
+		for (int h = 0; h < input_channels; ++h) {
+			for (int r = 0; r < input_size; ++r) {
+				for (int c = 0; c < input_size; ++c) {
+					double sum = 0;
+					for (int i = 0; i < pool_size; ++i) {
+						for (int j = 0; j < pool_size; ++j) {
+							if (r - i >= 0 && r - i < input_size && c - j >= 0 && c - j < input_size) {
+								sum += ((grad_output.get({ h, r - i, c - j }) == input.get({h,r,c})) / count[h][r - i][c - j]);
+							}
+						}
+					}
+					grad_input.get({ h, r, c }) += sum;
+				}
+			}
+		}
 	}
 
 	void update(double learning_rate) override {
-
+		// do nothing
 	}
-	
+
 private:
 	int input_channels;
 	int input_size;
 	int pool_size;
-	vector<Tensor> weights; //weights are stored in a vector
-	vector<double> biases; //biases are stored in a vector
-	vector<Tensor> grad_weights; //grad_weights are stored in a vector
-	vector<double> grad_biases; //grad_biases are stored in a vector
+	vector<vector<vector<int>>> count; // Store counts of max values
 };
 //model is a class that contains layers
 
