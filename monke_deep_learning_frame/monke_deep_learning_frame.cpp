@@ -39,6 +39,8 @@ public:
 	// Update weights
 	virtual void update(double learning_rate) = 0;
 
+	virtual void reset() = 0;
+
 private:
 	// Private members
 	
@@ -70,6 +72,12 @@ public:
 				grad_input.get({ i }) = 0;
 			}
 		}
+	}
+	void update(double learning_rate) override{
+		return;
+	}
+	void reset() override{
+		return;
 	}
 private:
 	int input_size;
@@ -112,6 +120,12 @@ public:
 			}
 		}
 
+	}
+	void update(double learning_rate) override{
+		return;
+	}
+	void reset() override{
+		return;
 	}
 private:
 	int input_channels;
@@ -185,6 +199,10 @@ public:
 			}
 			biases[i] -= learning_rate * grad_biases[i];
 		}
+	}
+	void reset() override{
+		vector<Tensor> grad_weights = vector<Tensor>(output_size, Tensor({ input_size })); //grad_weights are stored in a vector
+		vector<double> grad_biases = vector<double>(output_size,0);; //grad_biases are stored in a vector
 	}
 private:
 	
@@ -303,6 +321,10 @@ public:
 			biases[i] -= learning_rate * grad_biases[i];
 		}
 	}
+	void reset() override{
+		grad_weights = vector<Tensor>(output_channels, Tensor({ input_channels, kernel_size, kernel_size }));
+		grad_biases = vector<double>(output_channels,0);
+	}
 private:
 	int input_channels;
 	int input_size;
@@ -341,6 +363,7 @@ public:
 						}
 					}
 					output.get({ h, r, c}) = max_val;
+					count[h][r][c] = 0;
 					for (int i = 0; i < pool_size; ++i) {
 						for (int j = 0; j < pool_size; ++j) {
 							if (input.get({ h, r + i, c + j }) == max_val) {
@@ -373,6 +396,9 @@ public:
 
 	void update(double learning_rate) override {
 		// do nothing
+	}
+	void reset() override{
+		return;
 	}
 
 private:
