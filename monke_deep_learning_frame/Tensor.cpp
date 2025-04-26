@@ -6,11 +6,11 @@
 // 建構子：根據形狀初始化 Tensor
 Tensor::Tensor(const std::vector<int>& shape) : shape(shape) {
     calculate_strides();
-    data = std::vector<double>(calculate_total_size(),0);
+    data = std::vector<float>(calculate_total_size(),0);
 }
 
 // 建構子：從現有資料和形狀建立 Tensor (複製資料)
-Tensor::Tensor(const std::vector<int>& shape, const std::vector<double>& data) : shape(shape), data(data) {
+Tensor::Tensor(const std::vector<int>& shape, const std::vector<float>& data) : shape(shape), data(data) {
     if (data.size() != calculate_total_size()) {
         throw std::invalid_argument("Data size does not match shape");
     }
@@ -23,29 +23,35 @@ size_t Tensor::size() const {
 }
 
 // 根據索引取得元素 (const 版本)
-double Tensor::get(const std::vector<int>& index) const {
+float Tensor::get(const std::vector<int>& index) const {
+    /*
     size_t linear_index = get_linear_index(index);
     if (linear_index >= data.size()) {
         throw std::out_of_range("Index out of bounds");
     }
     return data[linear_index];
+    */
+    return data[get_linear_index(index)];
 }
 
 // 根據索引取得元素的引用 (可修改 Tensor 內容)
-double& Tensor::get(const std::vector<int>& index) {
+float& Tensor::get(const std::vector<int>& index) {
+    /*
     size_t linear_index = get_linear_index(index);
     if (linear_index >= data.size()) {
         throw std::out_of_range("Index out of bounds");
     }
     return data[linear_index];
+    */
+    return data[get_linear_index(index)];
 }
 
 // 取得指向內部資料的指標 (謹慎使用)
-double* Tensor::data_ptr() {
+float* Tensor::data_ptr() {
     return data.data();
 }
 
-const double* Tensor::data_ptr() const {
+const float* Tensor::data_ptr() const {
     return data.data();
 }
 
@@ -84,7 +90,7 @@ void Tensor::calculate_strides() {
 }
 
 // 將多維索引轉換為一維線性索引 (使用步長)
-size_t Tensor::get_linear_index(const std::vector<int>& index) const {
+inline size_t Tensor::get_linear_index(const std::vector<int>& index) const {
     if (index.size() != shape.size()) {
         throw std::invalid_argument("Incorrect number of indices");
     }

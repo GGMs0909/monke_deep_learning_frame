@@ -12,10 +12,10 @@ using namespace std;
 
 
 
-static double random_normal_double(double mean, double stddev) {
+static float random_normal_float(float mean, float stddev) {
 	static std::random_device rd;
 	static std::mt19937 gen(rd());
-	std::normal_distribution<double> dist(mean, stddev);
+	std::normal_distribution<float> dist(mean, stddev);
 	return dist(gen);
 }
 
@@ -40,11 +40,12 @@ public:
 	// Backward pass
 	virtual void backward(const Tensor& grad_output, const Tensor& output, Tensor& grad_input) = 0;
 	// Update weights
-	virtual void update(double learning_rate) = 0;
+	virtual void update(float learning_rate) = 0;
 	// Reset gradients
 	virtual void reset_gradients() = 0;
 	// get layer name
 	
+
 
 private:
 	// Private members
@@ -70,7 +71,7 @@ public:
 	void forward(const Tensor& input, Tensor& output) override {
 		// Perform forward pass using ReLU activation function
 		for (int i = 0; i < input_size; ++i) {
-			output.get({ i }) = std::max(0.0, input.get({ i }));
+			output.get({ i }) = max(0.0f, input.get({ i }));
 		}
 	}
 	// Backward pass
@@ -86,7 +87,7 @@ public:
 		}
 	}
 	// Update weights
-	void update(double learning_rate) override {
+	void update(float learning_rate) override {
 		// do nothing
 	}
 	// Reset gradients
@@ -121,7 +122,7 @@ public:
 			for (int r = 0; r < input_size; ++r) {
 				for (int c = 0; c < input_size; ++c) {
 					//cout << h << " " << r << " " << c << endl;
-					output.get({ h, r, c }) = std::max(0.0, input.get({ h, r, c }));
+					output.get({ h, r, c }) = max(0.0f, input.get({ h, r, c }));
 				}
 			}
 		}
@@ -145,7 +146,7 @@ public:
 
 	}
 	// Update weights
-	void update(double learning_rate) override {
+	void update(float learning_rate) override {
 		// do nothing
 	}
 	// Reset gradients
@@ -165,15 +166,15 @@ public:
 	dense(int input_size, int output_size) : input_size(input_size), output_size(output_size) {
 		// Initialize weights and biases He initialization
 		weights = vector<Tensor>(output_size, Tensor({ input_size }));
-		biases = vector<double>(output_size,0);
+		biases = vector<float>(output_size,0);
 		grad_weights = weights;
 		grad_biases = biases;
 		// Initialize weights and biases using He initialization
 		for (int i = 0; i < output_size; ++i) {
 			for (int j = 0; j < input_size; ++j) {
-				weights[i].get({j}) = random_normal_double(0.0f, sqrt(2.0f / input_size));
+				weights[i].get({j}) = random_normal_float(0.0f, sqrt(2.0f / input_size));
 			}
-			biases[i] = random_normal_double(0.0f, sqrt(2.0f / input_size));
+			biases[i] = random_normal_float(0.0f, sqrt(2.0f / input_size));
 		}
 		
 
@@ -195,7 +196,7 @@ public:
 		// Perform forward 
 		// pass using weights and biases
 		for (int i = 0; i < output_size; ++i) {
-			double sum = 0;
+			float sum = 0;
 			for (int j = 0; j < input_size; ++j) {
 				sum += weights[i].get({j}) * input.get({j});
 			}
@@ -213,7 +214,7 @@ public:
 			grad_biases[i] += grad_output.get({ i });
 		}
 		for (int i = 0; i < input_size; ++i) {
-			double sum = 0;
+			float sum = 0;
 			for (int j = 0; j < output_size; ++j) {
 				sum += grad_output.get({ j }) * weights[j].get({ i });
 			}
@@ -222,7 +223,7 @@ public:
 
 	}
 	// Update weights
-	void update(double learning_rate) override {
+	void update(float learning_rate) override {
 		// Update weights and biases
 		for (int i = 0; i < output_size; ++i) {
 			for (int j = 0; j < input_size; ++j) {
@@ -246,9 +247,9 @@ private:
 	int input_size;
 	int output_size;
 	vector<Tensor> weights; //weights are stored in a vector
-	vector<double> biases; //biases are stored in a vector
+	vector<float> biases; //biases are stored in a vector
 	vector<Tensor> grad_weights; //grad_weights are stored in a vector
-	vector<double> grad_biases; //grad_biases are stored in a vector
+	vector<float> grad_biases; //grad_biases are stored in a vector
 	
 };
 class convolution : public layer {
@@ -258,7 +259,7 @@ public:
 		: input_channels(input_channels), input_size(input_size), output_channels(output_channels), kernel_size(kernel_size) {
 		// Initialize weights and biases
 		weights = vector<Tensor>(output_channels, Tensor({ input_channels, kernel_size, kernel_size }));
-		biases = vector<double>(output_channels,0);
+		biases = vector<float>(output_channels,0);
 		grad_weights = weights;
 		grad_biases = biases;
 		// Initialize weights and biases using He initialization
@@ -267,11 +268,11 @@ public:
 			for (int j = 0; j < input_channels; ++j) {
 				for (int k = 0; k < kernel_size; ++k) {
 					for (int l = 0; l < kernel_size; ++l) {
-						weights[i].get({ j,k,l }) = random_normal_double(0.0f, sqrt(2.0f / (input_channels * kernel_size * kernel_size)));
+						weights[i].get({ j,k,l }) = random_normal_float(0.0f, sqrt(2.0f / (input_channels * kernel_size * kernel_size)));
 					}
 				}
 			}
-			biases[i] = random_normal_double(0.0f, sqrt(2.0f / (input_channels * kernel_size * kernel_size)));
+			biases[i] = random_normal_float(0.0f, sqrt(2.0f / (input_channels * kernel_size * kernel_size)));
 		}
 
 	}
@@ -289,13 +290,59 @@ public:
 	// Forward pass
 	void forward(const Tensor& input, Tensor& output) override{
 		// Perform forward pass using weights and biases
-		for (int h = 0; h < output_channels; h++) {
-			for (int r = 0; r < input_size - kernel_size + 1;r++) {
-				for (int c = 0; c < input_size - kernel_size + 1;c++) {
-					double sum = 0;
-					for (int i = 0; i < input_channels; i++) {
-						for (int j = 0; j < kernel_size; j++) {
-							for (int k = 0; k < kernel_size; k++) {
+		vector<vector<vector<float>>> input_vector(input_channels, vector<vector<float>>(input_size, vector<float>(input_size)));
+		for (int i = 0; i < input_channels; ++i) {
+			for (int j = 0; j < input_size; ++j) {
+				for (int k = 0; k < input_size; ++k) {
+					input_vector[i][j][k] = input.get({ i, j, k });
+				}
+			}
+		}
+		vector<vector<vector<vector<float>>>> weights_vector(output_channels, vector<vector<vector<float>>>(input_channels, vector<vector<float>>(kernel_size, vector<float>(kernel_size))));
+		for (int i = 0; i < output_channels; ++i) {
+			for (int j = 0; j < input_channels; ++j) {
+				for (int k = 0; k < kernel_size; ++k) {
+					for (int l = 0; l < kernel_size; ++l) {
+						weights_vector[i][j][k][l] = weights[i].get({ j, k, l });
+					}
+				}
+			}
+		}
+		vector<vector<vector<float>>> output_vector(output_channels, vector<vector<float>>(input_size - kernel_size + 1, vector<float>(input_size - kernel_size + 1)));
+		for (int h = 0; h < output_channels; ++h) {
+			for (int r = 0; r < input_size - kernel_size + 1;++r) {
+				cout << h << " " << r << "\n";
+				for (int c = 0; c < input_size - kernel_size + 1;++c) {
+					//cout << h << " " << r << " " << c << endl;
+					float sum = 0;
+					for (int i = 0; i < input_channels; ++i) {
+						for (int j = 0; j < kernel_size; ++j) {
+							for (int k = 0; k < kernel_size; ++k) {
+								sum += input_vector[i][r + j][c + k] * weights_vector[h][i][j][k];
+							}
+						}
+					}
+					output_vector[h][r][c] = sum + biases[h];
+				}
+			}
+		}
+		for (int i = 0; i < output_channels; ++i) {
+			for (int j = 0; j < input_size - kernel_size + 1; ++j) {
+				for (int k = 0; k < input_size - kernel_size + 1; ++k) {
+					output.get({ i, j, k }) = output_vector[i][j][k];
+				}
+			}
+		}
+		/*
+		for (int h = 0; h < output_channels; ++h) {
+			for (int r = 0; r < input_size - kernel_size + 1;++r) {
+				cout << h << " " << r << "\n";
+				for (int c = 0; c < input_size - kernel_size + 1;++c) {
+					//cout << h << " " << r << " " << c << endl;
+					float sum = 0;
+					for (int i = 0; i < input_channels; ++i) {
+						for (int j = 0; j < kernel_size; ++j) {
+							for (int k = 0; k < kernel_size; ++k) {
 								sum += input.get({ i, r + j, c + k }) * weights[h].get({ i, j, k });
 							}
 						}
@@ -304,6 +351,7 @@ public:
 				}
 			}
 		}
+		*/
 		
 	}
 	// Backward pass
@@ -313,7 +361,7 @@ public:
 			for (int i = 0; i < input_channels; ++i) {
 				for (int j = 0; j < kernel_size; ++j) {
 					for (int k = 0; k < kernel_size; ++k) {
-						double sum = 0;
+						float sum = 0;
 						for (int r = 0; r < input_size - kernel_size + 1; ++r) {
 							for (int c = 0; c < input_size - kernel_size + 1; ++c) {
 								sum += grad_output.get({ h, r, c }) * input.get({ i, r + j, c + k });
@@ -323,7 +371,7 @@ public:
 					}
 				}
 			}
-			double sum = 0;
+			float sum = 0;
 			for (int r = 0; r < input_size - kernel_size + 1;++r) {
 				for (int c = 0; c < input_size - kernel_size + 1;++c) {
 					sum += grad_output.get({ h, r, c });
@@ -334,7 +382,7 @@ public:
 		for (int i = 0; i < input_channels; ++i) {
 			for (int j = 0; j < input_size; ++j) {
 				for (int k = 0; k < input_size; ++k) {
-					double sum = 0;
+					float sum = 0;
 					for (int h = 0; h < output_channels; ++h) {
 						for (int r = 0; r < kernel_size; ++r) {
 							for (int c = 0; c < kernel_size; ++c) {
@@ -346,13 +394,14 @@ public:
 						}
 					}
 					grad_input.get({ i, j, k }) += sum;
+					//cout << i << " " << j << " " << k << '\n';
 				}
 			}
 		}
 		
 	}
 	// Update weights
-	void update(double learning_rate) override{
+	void update(float learning_rate) override{
 		// Update weights and biases
 		for (int i = 0; i < output_channels; ++i) {
 			for (int j = 0; j < input_channels; ++j) {
@@ -387,9 +436,9 @@ private:
 
 	int kernel_size;
 	vector<Tensor> weights; //weights are stored in a vector
-	vector<double> biases; //biases are stored in a vector
+	vector<float> biases; //biases are stored in a vector
 	vector<Tensor> grad_weights; //grad_weights are stored in a vector
-	vector<double> grad_biases; //grad_biases are stored in a vector
+	vector<float> grad_biases; //grad_biases are stored in a vector
 	
 };
 class pooling : public layer {
@@ -399,7 +448,7 @@ public:
 		: input_channels(input_channels), input_size(input_size), pool_size(pool_size) {
 		// Output size for pooling with stride = pool_size (common),
 		// but your forward uses stride 1, so output size is input_size - pool_size + 1
-		int output_dim = input_size - pool_size + 1;
+		int output_dim = input_size / pool_size;
 		if (output_dim <= 0) {
 			throw std::invalid_argument("Invalid input_size or pool_size for pooling layer.");
 		}
@@ -417,7 +466,7 @@ public:
 	}
 
 	void Get_Tensor(Tensor& output) override {
-		int output_dim = input_size - pool_size + 1;
+		int output_dim = input_size / pool_size;
 		if (output_dim <= 0) {
 			throw std::invalid_argument("Invalid input_size or pool_size for pooling layer.");
 		}
@@ -426,19 +475,20 @@ public:
 
 	// Forward pass
 	void forward(const Tensor& input, Tensor& output) override {
-		int output_dim = input_size - pool_size + 1;
+		//int stride = pool_size;
+		int output_dim = input_size / pool_size;
 
 		for (int h = 0; h < input_channels; ++h) {
 			for (int r = 0; r < output_dim; ++r) {
 				for (int c = 0; c < output_dim; ++c) {
-					double max_val = input.get({ h, r, c }); // Initialize with the first element in the window
+					float max_val = input.get({ h, r*pool_size, c*pool_size }); // Initialize with the first element in the window
 					int max_i = 0; // Relative row index of the max value in the window
 					int max_j = 0; // Relative col index of the max value in the window
 
 					for (int i = 0; i < pool_size; ++i) {
 						for (int j = 0; j < pool_size; ++j) {
-							if (input.get({ h, r + i, c + j }) > max_val) {
-								max_val = input.get({ h, r + i, c + j });
+							if (input.get({ h, r*pool_size + i, c*pool_size + j }) > max_val) {
+								max_val = input.get({ h, r*pool_size + i, c*pool_size + j});
 								max_i = i;
 								max_j = j;
 							}
@@ -454,7 +504,7 @@ public:
 	// Backward pass (Modified for standard max pooling)
 	void backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) override {
 		// grad_input needs to be initialized to zero before the backward pass starts for a batch
-		int output_dim = input_size - pool_size + 1;
+		int output_dim = input_size / pool_size;
 
 		for (int h = 0; h < input_channels; ++h) {
 			for (int r = 0; r < output_dim; ++r) {
@@ -466,13 +516,13 @@ public:
 
 					// Add the output gradient to the location of the max value in the input gradient
 					// The location in input is (h, r + max_i, c + max_j)
-					grad_input.get({ h, r + max_i, c + max_j }) += grad_output.get({ h, r, c });
+					grad_input.get({ h, r*pool_size + max_i, c*pool_size + max_j}) += grad_output.get({h, r, c});
 				}
 			}
 		}
 	}
 
-	void update(double learning_rate) override {
+	void update(float learning_rate) override {
 		// Pooling layers have no learnable parameters, so nothing to update
 	}
 
@@ -493,6 +543,7 @@ public:
 	// Constructor
 	flatten_3D(int input_channels, int input_size) : input_channels(input_channels), input_size(input_size) {
 		// Initialize the flatten layer
+		
 	}
 	// Destructor
 	~flatten_3D() {
@@ -526,7 +577,7 @@ public:
 		}
 	}
 	// Update weights
-	void update(double learning_rate) override {
+	void update(float learning_rate) override {
 		// do nothing
 	}
 	// Reset gradients
@@ -544,22 +595,33 @@ class model {
 
 public:
 	// Constructor
-	model(vector<layer*> layers) : layers(layers) {
+	model()  {
 		// Initialize the model
 		// Initialize inputs
-		inputs = vector<Tensor>(layers.size()+1);
-		grad_inputs = vector<Tensor>(layers.size() + 1);
-		for(int i = 0; i < layers.size(); i++){
-			layers[i]->Get_Tensor(inputs[i+1]);
-			grad_inputs[i+1] = inputs[i+1];
-			cout << layers[i]->get_name() << endl;
-			inputs[i+1].print();
-		}
+		
 
 	}
 	// Destructor
 	~model() {
 		// Clean up resources
+		for (int i = 0; i < layers.size(); i++) {
+			delete layers[i];
+		}
+	}
+	void add_layer(layer* l) {
+		// Add a layer to the model
+		cout << "add layer " << l->get_name() << endl;
+		layers.push_back(l);
+	}
+	void compile_model() {
+		inputs = vector<Tensor>(layers.size() + 1);
+		grad_inputs = vector<Tensor>(layers.size() + 1);
+		for (int i = 0; i < layers.size(); i++) {
+			layers[i]->Get_Tensor(inputs[i + 1]);
+			grad_inputs[i + 1] = inputs[i + 1];
+			cout << layers[i]->get_name() << endl;
+			inputs[i + 1].print();
+		}
 	}
 	Tensor forward(Tensor input) {
 		cout << "---------forward---------" << endl;
@@ -581,7 +643,7 @@ public:
 			
 		}
 	}
-	void update(double learning_rate) {
+	void update(float learning_rate) {
 		for (int i = 1; i < layers.size(); i++) {
 			layers[i]->update(learning_rate);
 		}
@@ -611,20 +673,30 @@ int main() {
 
 
 	//Example usage of the model class
-	vector<layer*> layers;
-	layers.push_back(new convolution(10, 10, 20, 3));
-	layers.push_back(new relu_3D(20, 8));
-	layers.push_back(new pooling(20, 8, 2));
-	layers.push_back(new flatten_3D(20, 7));
-	layers.push_back(new dense(20*7*7, 5));
-	model m(layers);
+
+	model m;
+	m.add_layer(new convolution(2, 400, 3, 100));//2x400x400 -> 3x301x301
+	m.add_layer(new relu_3D(3, 301));//3x301x301->3x301x301
+	m.add_layer(new pooling(3, 301, 2));//3x301x301->3x150x150
+	m.add_layer(new convolution(3, 150, 3, 50));//3x150x150->3x101x101
+	m.add_layer(new relu_3D(3, 101));//3x101x101->3x101x101
+	m.add_layer(new pooling(3, 101, 2));////3x101x101->3x50x50
+	m.add_layer(new flatten_3D(3, 50));//3x50x50->3*50*50
+	m.add_layer(new dense(3 * 50 * 50, 5));//3*50*50->5
+	m.add_layer(new relu_1D(5, 5));//5->5
+	m.add_layer(new dense(5, 5));////5->5
+	m.add_layer(new relu_1D(5, 5));//5->5
+	m.add_layer(new dense(5, 5));//5->5
+	cout << "---------compiling model---------" << endl;
+	m.compile_model();
+	cout << "---------compiling model end---------" << endl;
 	// Create input tensor
-	Tensor input({ 10, 10, 10 });
+	Tensor input({ 2, 400, 400 });
 	// Initialize input tensor with random values
-	for (int i = 0; i < 10; ++i) {
-		for (int j = 0; j < 10; ++j) {
-			for (int k = 0; k < 10; ++k) {
-				input.get({ i, j, k }) = random_normal_double(0.0f, 1.0f);
+	for (int i = 0; i < 2; ++i) {
+		for (int j = 0; j < 400; ++j) {
+			for (int k = 0; k < 400; ++k) {
+				input.get({ i, j, k }) = random_normal_float(0.0f, 1.0f);
 			}
 		}
 	}
@@ -643,9 +715,7 @@ int main() {
 	m.update(0.01);
 	m.reset_gradients();
 	// Clean up
-	for (auto layer : layers) {
-		delete layer;
-	}
+
 
     return 0;
 }
