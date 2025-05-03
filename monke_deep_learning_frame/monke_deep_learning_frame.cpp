@@ -5,6 +5,7 @@
 #include <string>
 #include "Tensor.h"
 #include <random>
+#include <omp.h>
 
 
 
@@ -118,6 +119,7 @@ public:
 	void forward(const Tensor& input, Tensor& output) override {
 		// Perform forward pass using ReLU activation function
 		int output_channels = input_channels;
+#pragma omp for collapse(3)
 		for (int h = 0; h < output_channels; ++h) {
 			for (int r = 0; r < input_size; ++r) {
 				for (int c = 0; c < input_size; ++c) {
@@ -289,69 +291,71 @@ public:
 	}
 	// Forward pass
 	void forward(const Tensor& input, Tensor& output) override{
-		// Perform forward pass using weights and biases
 		vector<vector<vector<float>>> input_vector(input_channels, vector<vector<float>>(input_size, vector<float>(input_size)));
+		vector<vector<vector<float>>> output_vector(output_channels, vector<vector<float>>(input_size - kernel_size + 1, vector<float>(input_size - kernel_size + 1)));
+		
 		for (int i = 0; i < input_channels; ++i) {
 			for (int j = 0; j < input_size; ++j) {
 				for (int k = 0; k < input_size; ++k) {
-					input_vector[i][j][k] = input.get({ i, j, k });
+					input_vector[i][j][k] = input.get({ i,j,k });
 				}
 			}
 		}
-		vector<vector<vector<vector<float>>>> weights_vector(output_channels, vector<vector<vector<float>>>(input_channels, vector<vector<float>>(kernel_size, vector<float>(kernel_size))));
-		for (int i = 0; i < output_channels; ++i) {
-			for (int j = 0; j < input_channels; ++j) {
-				for (int k = 0; k < kernel_size; ++k) {
-					for (int l = 0; l < kernel_size; ++l) {
-						weights_vector[i][j][k][l] = weights[i].get({ j, k, l });
-					}
-				}
-			}
-		}
-		vector<vector<vector<float>>> output_vector(output_channels, vector<vector<float>>(input_size - kernel_size + 1, vector<float>(input_size - kernel_size + 1)));
+		double im2col_time = 0;
+		double conv_time = 0;
 		for (int h = 0; h < output_channels; ++h) {
-			for (int r = 0; r < input_size - kernel_size + 1;++r) {
-				cout << h << " " << r << "\n";
-				for (int c = 0; c < input_size - kernel_size + 1;++c) {
-					//cout << h << " " << r << " " << c << endl;
-					float sum = 0;
-					for (int i = 0; i < input_channels; ++i) {
-						for (int j = 0; j < kernel_size; ++j) {
-							for (int k = 0; k < kernel_size; ++k) {
-								sum += input_vector[i][r + j][c + k] * weights_vector[h][i][j][k];
+			vector<float>& weights_vector = weights[h].data;
+			#pragma omp parallel
+			{
+				vector<float> thread_im2col(input_channels * kernel_size * kernel_size);
+				#pragma omp for collapse(2)
+				for (int r = 0; r < input_size - kernel_size + 1; ++r) {
+					for (int c = 0; c < input_size - kernel_size + 1; ++c) {
+						//im2col
+						double start_time = omp_get_wtime();
+						
+						for (int i = 0; i < input_channels; ++i) {
+							for (int j = 0; j < kernel_size; ++j) {
+								for (int k = 0; k < kernel_size; ++k) {
+									thread_im2col[i * kernel_size * kernel_size + j * kernel_size + k] = input_vector[i][r + j][c + k];
+								}
 							}
 						}
+						double end_time = omp_get_wtime();
+						im2col_time += end_time - start_time;
+						
+						//convolution
+						start_time = omp_get_wtime();
+						float sum = 0;
+						//using simd
+						#pragma omp simd
+						for (int i = 0; i < input_channels * kernel_size * kernel_size; ++i) {
+							sum += thread_im2col[i] * weights_vector[i];
+						}
+						output_vector[h][r][c] = sum + biases[h];
+						end_time = omp_get_wtime();
+						conv_time += end_time - start_time;
 					}
-					output_vector[h][r][c] = sum + biases[h];
 				}
+					
+
 			}
 		}
+
+
+		// Copy output_vector to output tensor
 		for (int i = 0; i < output_channels; ++i) {
 			for (int j = 0; j < input_size - kernel_size + 1; ++j) {
 				for (int k = 0; k < input_size - kernel_size + 1; ++k) {
-					output.get({ i, j, k }) = output_vector[i][j][k];
+					output.get({ i,j,k }) = output_vector[i][j][k];
 				}
 			}
 		}
-		/*
-		for (int h = 0; h < output_channels; ++h) {
-			for (int r = 0; r < input_size - kernel_size + 1;++r) {
-				cout << h << " " << r << "\n";
-				for (int c = 0; c < input_size - kernel_size + 1;++c) {
-					//cout << h << " " << r << " " << c << endl;
-					float sum = 0;
-					for (int i = 0; i < input_channels; ++i) {
-						for (int j = 0; j < kernel_size; ++j) {
-							for (int k = 0; k < kernel_size; ++k) {
-								sum += input.get({ i, r + j, c + k }) * weights[h].get({ i, j, k });
-							}
-						}
-					}
-					output.get({ h, r, c }) = sum + biases[h];
-				}
-			}
-		}
-		*/
+
+		cout << "im2col time: " << im2col_time << endl;
+		cout << "conv time: " << conv_time << endl;
+		//cin.get();
+
 		
 	}
 	// Backward pass
@@ -477,7 +481,7 @@ public:
 	void forward(const Tensor& input, Tensor& output) override {
 		//int stride = pool_size;
 		int output_dim = input_size / pool_size;
-
+#pragma omp for collapse(3)
 		for (int h = 0; h < input_channels; ++h) {
 			for (int r = 0; r < output_dim; ++r) {
 				for (int c = 0; c < output_dim; ++c) {
@@ -661,6 +665,21 @@ private:
 };
 
 int main() {
+#pragma omp parallel
+	{
+		// omp_get_thread_num() 獲取當前執行緒的 ID (通常從 0 開始)
+		// omp_get_num_threads() 獲取當前平行區域中的總執行緒數量
+		int thread_id = omp_get_thread_num();
+		int num_threads = omp_get_num_threads();
+		string s = "Hello from thread " + to_string(thread_id) + " out of " + to_string(num_threads) + '\n';
+		std::cout << s;
+
+		// 注意：平行區域內的輸出順序是不確定的
+	}
+	cin.get();
+
+	// 在平行區域結束後，只有主執行緒會繼續執行這裡的程式碼
+	std::cout << "Parallel region finished." << std::endl;
 	//Example usage of the Tensor class
     Tensor t1({ 2, 3, 4 });
     t1.print(t1.size());
@@ -673,16 +692,19 @@ int main() {
 
 
 	//Example usage of the model class
-
+	
 	model m;
-	m.add_layer(new convolution(2, 400, 3, 100));//2x400x400 -> 3x301x301
-	m.add_layer(new relu_3D(3, 301));//3x301x301->3x301x301
-	m.add_layer(new pooling(3, 301, 2));//3x301x301->3x150x150
-	m.add_layer(new convolution(3, 150, 3, 50));//3x150x150->3x101x101
-	m.add_layer(new relu_3D(3, 101));//3x101x101->3x101x101
-	m.add_layer(new pooling(3, 101, 2));////3x101x101->3x50x50
-	m.add_layer(new flatten_3D(3, 50));//3x50x50->3*50*50
-	m.add_layer(new dense(3 * 50 * 50, 5));//3*50*50->5
+	m.add_layer(new convolution(3, 1000, 20, 100));//3x1000x1000 -> 20x901x901
+	m.add_layer(new relu_3D(20, 901));//20x901x901->20x901x901
+	m.add_layer(new pooling(20, 901, 3));//20x901x901->20x300x300
+	m.add_layer(new convolution(20, 300, 10, 50));//20x300x300->10x251x251
+	m.add_layer(new relu_3D(10, 251));//10x251x251->10x251x251
+	m.add_layer(new pooling(10, 251, 2));////10x251x251->10x125x125
+	m.add_layer(new convolution(10, 125, 5, 25));//10x125x125->5x101x101
+	m.add_layer(new relu_3D(5, 101));//5x101x101->5x101x101
+	m.add_layer(new pooling(5, 101, 2));//5x101x101->5x50x50
+	m.add_layer(new flatten_3D(5, 50));//5x50x50->5*50*50
+	m.add_layer(new dense(5 * 50 * 50, 5));//5*50*50->5
 	m.add_layer(new relu_1D(5, 5));//5->5
 	m.add_layer(new dense(5, 5));////5->5
 	m.add_layer(new relu_1D(5, 5));//5->5
@@ -691,19 +713,21 @@ int main() {
 	m.compile_model();
 	cout << "---------compiling model end---------" << endl;
 	// Create input tensor
-	Tensor input({ 2, 400, 400 });
+	Tensor input({ 3, 1000, 1000 });
 	// Initialize input tensor with random values
-	for (int i = 0; i < 2; ++i) {
-		for (int j = 0; j < 400; ++j) {
-			for (int k = 0; k < 400; ++k) {
+	for (int i = 0; i < 3; ++i) {
+		for (int j = 0; j < 1000; ++j) {
+			for (int k = 0; k < 1000; ++k) {
 				input.get({ i, j, k }) = random_normal_float(0.0f, 1.0f);
 			}
 		}
 	}
 
 	cout << "gaga" << endl;
-	
+	double t = omp_get_wtime();
 	Tensor output = m.forward(input);
+	t = omp_get_wtime() - t;
+	cout << "forward time: " << t << "s" << endl;
 	Tensor grad_output({ 5 });
 	grad_output.get({ 0 }) = 1.0;
 	grad_output.get({ 1 }) = 2.0;
