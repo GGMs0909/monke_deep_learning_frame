@@ -1,6 +1,6 @@
 #include "Tensor.h"
 #include <numeric> // std::accumulate
-#include <algorithm> // std::min
+#include <algorithm>
 #include <sstream> // std::stringstream
 
 // 建構子：根據形狀初始化 Tensor
@@ -55,23 +55,27 @@ const float* Tensor::data_ptr() const {
     return data.data();
 }
 
-// 打印 Tensor 的形狀和部分內容 (方便調試)
-void Tensor::print(int limit) const {
-    std::cout << "Shape: [";
-    for (size_t i = 0; i < shape.size(); ++i) {
-        std::cout << shape[i] << (i == shape.size() - 1 ? "" : ", ");
-    }
-    std::cout << "], Data (first " << limit << " elements): [";
-    for (size_t i = 0; i < std::min((size_t)limit, data.size()); ++i) {
-        std::cout << data[i] << (i == std::min((size_t)limit, data.size()) - 1 ? "" : ", ");
-    }
-    if (data.size() > limit) {
-        std::cout << "...]";
-    }
-    else {
-        std::cout << "]";
-    }
-    std::cout << std::endl;
+
+
+// Fix the problematic line in the print method
+void Tensor::print(size_t limit) const {
+   std::cout << "Shape: [";
+   for (size_t i = 0; i < shape.size(); ++i) {
+       std::cout << shape[i] << (i == shape.size() - 1 ? "" : ", ");
+   }
+   int y = std::min(1, 2);
+   size_t elements_to_print = std::min(x, data.size());
+   std::cout << "], Data (first " << limit << " elements): [";
+   for (size_t i = 0; i < elements_to_print; ++i) { // Cast limit to size_t
+       std::cout << data[i] << (i == elements_to_print - 1 ? "" : ", ");
+   }
+   if (data.size() > limit) {
+       std::cout << "...]";
+   }
+   else {
+       std::cout << "]";
+   }
+   std::cout << std::endl;
 }
 
 // 計算總元素數量

@@ -6,6 +6,8 @@
 #include "Tensor.h"
 #include <random>
 #include <omp.h>
+#include "opencl_runtime.h"
+
 
 
 
@@ -313,14 +315,18 @@ public:
 					for (int c = 0; c < input_size - kernel_size + 1; ++c) {
 						//im2col
 						double start_time = omp_get_wtime();
-						
+						#pragma omp simd
 						for (int i = 0; i < input_channels; ++i) {
 							for (int j = 0; j < kernel_size; ++j) {
 								for (int k = 0; k < kernel_size; ++k) {
-									thread_im2col[i * kernel_size * kernel_size + j * kernel_size + k] = input_vector[i][r + j][c + k];
+									thread_im2col[i * kernel_size * kernel_size + j * kernel_size + k] =
+										input_vector[i][r+j][c+k];
 								}
 							}
 						}
+                        
+
+
 						double end_time = omp_get_wtime();
 						im2col_time += end_time - start_time;
 						

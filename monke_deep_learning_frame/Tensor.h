@@ -4,12 +4,15 @@
 #include <vector>
 #include <stdexcept>
 #include <iostream>
+#include "opencl_runtime.h"
+
 
 class Tensor {
 public:
     std::vector<int> shape;
     std::vector<int> strides;
     std::vector<float> data;
+	cl::Buffer cl_buffer; // OpenCL buffer for GPU operations
 
     Tensor() = default;
 
@@ -33,8 +36,11 @@ public:
 
     const float* data_ptr() const;
 
+	void transfer_to_gpu();
+	void transfer_to_cpu();
+
     // 打印 Tensor 的形狀和部分內容 (方便調試)
-    void print(int limit = 10) const;
+    void print(size_t limit = 10) const;
 
 private:
     // 計算總元素數量

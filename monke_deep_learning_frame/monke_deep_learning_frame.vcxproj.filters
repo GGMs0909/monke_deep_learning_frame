@@ -21,10 +21,21 @@
     <ClCompile Include="Tensor.cpp">
       <Filter>來源檔案</Filter>
     </ClCompile>
+    <ClCompile Include="opencl_runtime.cpp">
+      <Filter>來源檔案</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Tensor.h">
       <Filter>來源檔案</Filter>
     </ClInclude>
+    <ClInclude Include="opencl_runtime.h">
+      <Filter>來源檔案</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="kernel.cl">
+      <Filter>來源檔案</Filter>
+    </None>
   </ItemGroup>
 </Project>
