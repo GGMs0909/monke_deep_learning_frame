@@ -670,7 +670,7 @@ private:
 	vector<Tensor> grad_inputs;
 };
 
-int main() {
+int dmain() {
 #pragma omp parallel
 	{
 		// omp_get_thread_num() 獲取當前執行緒的 ID (通常從 0 開始)

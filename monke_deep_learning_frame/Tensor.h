@@ -12,6 +12,7 @@ public:
     std::vector<int> shape;
     std::vector<int> strides;
     std::vector<float> data;
+	size_t sizebyte; //for cl::Buffer
 	cl::Buffer cl_buffer; // OpenCL buffer for GPU operations
 
     Tensor() = default;
@@ -22,6 +23,8 @@ public:
     // 建構子：從現有資料和形狀建立 Tensor (複製資料)
     Tensor(const std::vector<int>& shape, const std::vector<float>& data);
 
+    ~Tensor();
+
     // 取得 Tensor 的總元素數量
     size_t size() const;
 
@@ -31,11 +34,16 @@ public:
     // 根據索引取得元素的引用 (可修改 Tensor 內容)
     float& get(const std::vector<int>& index);
 
+	cl::Buffer get_buffer();
+
+    cl::Buffer get_buffer() const;
+
     // 取得指向內部資料的指標 (謹慎使用)
     float* data_ptr();
 
     const float* data_ptr() const;
 
+	void copy_from(const Tensor& other);
 	void transfer_to_gpu();
 	void transfer_to_cpu();
 

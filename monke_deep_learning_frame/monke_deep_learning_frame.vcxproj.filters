@@ -24,12 +24,39 @@
     <ClCompile Include="opencl_runtime.cpp">
       <Filter>來源檔案</Filter>
     </ClCompile>
+    <ClCompile Include="model.cpp">
+      <Filter>來源檔案</Filter>
+    </ClCompile>
+    <ClCompile Include="layer.cpp">
+      <Filter>來源檔案</Filter>
+    </ClCompile>
+    <ClCompile Include="loss.cpp">
+      <Filter>來源檔案</Filter>
+    </ClCompile>
+    <ClCompile Include="optimizer.cpp">
+      <Filter>來源檔案</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>來源檔案</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Tensor.h">
       <Filter>來源檔案</Filter>
     </ClInclude>
     <ClInclude Include="opencl_runtime.h">
+      <Filter>來源檔案</Filter>
+    </ClInclude>
+    <ClInclude Include="model.h">
+      <Filter>來源檔案</Filter>
+    </ClInclude>
+    <ClInclude Include="layer.h">
+      <Filter>來源檔案</Filter>
+    </ClInclude>
+    <ClInclude Include="loss.h">
+      <Filter>來源檔案</Filter>
+    </ClInclude>
+    <ClInclude Include="optimizer.h">
       <Filter>來源檔案</Filter>
     </ClInclude>
   </ItemGroup>

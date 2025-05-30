@@ -135,12 +135,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="layer.cpp" />
+    <ClCompile Include="loss.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="model.cpp" />
     <ClCompile Include="monke_deep_learning_frame.cpp" />
     <ClCompile Include="opencl_runtime.cpp" />
+    <ClCompile Include="optimizer.cpp" />
     <ClCompile Include="Tensor.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="layer.h" />
+    <ClInclude Include="loss.h" />
+    <ClInclude Include="model.h" />
     <ClInclude Include="opencl_runtime.h" />
+    <ClInclude Include="optimizer.h" />
     <ClInclude Include="Tensor.h" />
   </ItemGroup>
   <ItemGroup>
