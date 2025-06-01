@@ -1,4 +1,6 @@
-﻿#include <vector>
+﻿//abandoned project
+
+#include <vector>
 #include <stdexcept>
 #include <iostream>
 #include <numeric> // std::accumulate

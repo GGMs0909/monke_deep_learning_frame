@@ -37,10 +37,23 @@ Tensor::Tensor(const std::vector<int>& shape, const std::vector<float>& data) : 
     calculate_strides();
 	sizebyte = data.size() * sizeof(float);
     cl_buffer = cl::Buffer(opencl_runtime::getInstance().get_context(), CL_MEM_READ_WRITE, sizebyte);
-    if (cl_buffer()) {
+    if (!cl_buffer()) {
+        throw std::runtime_error("Tensor constructor: Failed to create OpenCL buffer (cl_buffer() check failed).");
     }
-    else {
-        throw std::runtime_error("Failed to create OpenCL buffer");
+
+    // 嘗試執行一個寫入操作，確保緩衝區是可用的
+    float temp_zero = 0.0f;
+    cl_int write_err = opencl_runtime::getInstance().get_queue().enqueueWriteBuffer(
+        cl_buffer,          // 目標緩衝區
+        CL_TRUE,            // 阻塞寫入 (同步)
+        0,                  // 偏移量
+        sizeof(float),      // 寫入一個 float
+        &temp_zero          // 寫入的數據
+    );
+
+    if (write_err != CL_SUCCESS) {
+        std::cerr << "OpenCL Error: Failed to write to new cl::Buffer in Tensor constructor. Error code: " << write_err << std::endl;
+        throw std::runtime_error("Tensor constructor: Created OpenCL buffer is unusable for writing.");
     }
 	transfer_to_gpu();
 }
@@ -52,6 +65,10 @@ Tensor::~Tensor() {
 // 取得 Tensor 的總元素數量
 size_t Tensor::size() const {
     return data.size();
+}
+// 取得 Tensor 的形狀
+const std::vector<int>& Tensor::get_shape() const {
+	return shape;
 }
 
 // 根據索引取得元素 (const 版本)
@@ -102,18 +119,15 @@ const float* Tensor::data_ptr() const {
     return data.data();
 }
 
-void Tensor::copy_from(const Tensor& other) {
-
-	data = other.data; // 直接複製資料
-	sizebyte = data.size() * sizeof(float);
-
-	// 確保 OpenCL 緩衝區大小正確
-	if (cl_buffer()) {
-		cl_buffer = cl::Buffer(opencl_runtime::getInstance().get_context(), CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizebyte, data.data());
-	}
-	else {
-		throw std::runtime_error("Failed to create OpenCL buffer");
-	}
+void Tensor::share_buffer_and_reshape(const Tensor& other, const std::vector<int>& new_shape) {
+    if (!other.cl_buffer()) {
+        throw std::runtime_error("Tensor: Cannot share buffer from an uninitialized GPU buffer.");
+    }
+    this->cl_buffer = other.cl_buffer; // 共享 cl_buffer_
+    this->shape = new_shape;             // 設置新形狀
+    this->sizebyte = other.sizebyte; // 大小不變
+    // CPU 數據可選：如果需要，可以清除或設置為空
+    this->data = other.data;
 }
 
 // 將 Tensor 資料傳輸到 GPU (OpenCL)
@@ -125,7 +139,7 @@ void Tensor::transfer_to_gpu() {
 		throw std::runtime_error("Failed to create OpenCL buffer");
 	}
 }
-void Tensor::transfer_to_cpu() {
+void Tensor::transfer_to_cpu()  {
 	if (cl_buffer()) {
 		opencl_runtime::getInstance().get_queue().enqueueReadBuffer(cl_buffer, CL_TRUE, 0, data.size() * sizeof(float), data.data());
 	}
@@ -137,23 +151,24 @@ void Tensor::transfer_to_cpu() {
 
 
 // Fix the problematic line in the print method
-void Tensor::print(size_t limit) const {
-   std::cout << "Shape: [";
-   for (size_t i = 0; i < shape.size(); ++i) {
-       std::cout << shape[i] << (i == shape.size() - 1 ? "" : ", ");
-   }
-   size_t elements_to_print = min(limit, data.size());
-   std::cout << "], Data (first " << limit << " elements): [";
-   for (size_t i = 0; i < elements_to_print; ++i) { // Cast limit to size_t
-       std::cout << data[i] << (i == elements_to_print - 1 ? "" : ", ");
-   }
-   if (data.size() > limit) {
+void Tensor::print(size_t limit)  {
+    transfer_to_cpu(); // 確保資料在 CPU 上
+    std::cout << "Shape: [";
+    for (size_t i = 0; i < shape.size(); ++i) {
+        std::cout << shape[i] << (i == shape.size() - 1 ? "" : ", ");
+    }
+    size_t elements_to_print = min(limit, data.size());
+    std::cout << "], Data (first " << limit << " elements): [";
+    for (size_t i = 0; i < elements_to_print; ++i) { // Cast limit to size_t
+        std::cout << data[i] << (i == elements_to_print - 1 ? "" : ", ");
+    }
+    if (data.size() > limit) {
        std::cout << "...]";
-   }
-   else {
-       std::cout << "]";
-   }
-   std::cout << std::endl;
+    }
+    else {
+           std::cout << "]";
+    }
+    std::cout << std::endl;
 }
 
 // 計算總元素數量

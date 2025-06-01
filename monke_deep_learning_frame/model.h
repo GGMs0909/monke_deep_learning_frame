@@ -9,13 +9,21 @@
 class Model {
 public:
 	Model(Loss& lossfunction, Optimizer& optimizer);
+	
 	~Model();
 	void add_layer(Layer* layer);
 	void compile();
+	void compile(std::vector<Tensor*> parameters);
 	void forward(const Tensor& input, Tensor& output);
 	void forward(const Tensor& input, Tensor& output, const Tensor& real, float& loss_value); // Forward pass with loss calculation
 	void backward(const Tensor& prep, const Tensor& real); // Backward pass through the model
 	void update(); // Update model parameters using the optimizer
+	void reset();
+	float get_gradient_norm(); // Calculate the norm of the gradients
+	//for debugging
+	void print_parameters() const; // Print model parameters for debugging
+	void print_grad_parameters() const; // Print gradients of model parameters for debugging
+	void print_grad_inputs() ; // Print gradients for each layer for debugging
 
 private:
 	std::vector<Layer*> layers; // Store layers in a vector
@@ -25,5 +33,6 @@ private:
 	std::vector<Tensor*> parameters; // Store model parameters (weights and biases)
 	std::vector<Tensor*> grad_parameters; // Store gradients of model parameters
 	Optimizer* optimizer; // Pointer to the optimizer
+	cl::make_kernel<cl::Buffer, cl::Buffer, int> gradient_norm_kernel; // OpenCL kernel for calculating gradient norm
 };
 

@@ -49,7 +49,6 @@ float CrossEntropyLoss::calculate(const Tensor& pred, const Tensor& real) {
 	if (pred.size() != real.size()) {
 		throw std::invalid_argument("CrossEntropyLoss::calculate: 預測張量和真實張量的大小必須相同。");
 	}
-
 	float loss = 0.0f;
 	const float epsilon = 1e-9f; 
 	for (int i = 0; i < pred.size(); ++i) {

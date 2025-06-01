@@ -21,13 +21,9 @@ public:
 	virtual void Get_Tensor(Tensor& output) = 0;
 	virtual void forward(const Tensor& input, Tensor& output) = 0;
 	virtual void backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) = 0;
+	virtual void get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) = 0;
 
-	//all gradients are reset to zero in update function
-	bool has_parameter = 0;
-	Tensor weights;
-	Tensor biases;
-	Tensor grad_weights;
-	Tensor grad_biases;
+
 
 private:
 
@@ -41,8 +37,9 @@ public:
 	void Get_Tensor(Tensor& output) override;
 	void forward(const Tensor& input, Tensor& output) override;
 	void backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) override;
+	void get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) override;
 
-	bool has_parameter = 0;
+
 private:
 	int input_size;
 	cl::make_kernel<cl::Buffer, cl::Buffer, int> Relu_forward_kernel;
@@ -60,8 +57,9 @@ public:
 	void Get_Tensor(Tensor& output) override;
 	void forward(const Tensor& input, Tensor& output) override;
 	void backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) override;
+	void get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) override;
 
-	bool has_parameter = 0;
+
 private:
 	int input_size;
 	cl::make_kernel<cl::Buffer, cl::Buffer, int> Softmax_forward_kernel;
@@ -80,8 +78,8 @@ public:
 	void Get_Tensor(Tensor& output) override;
 	void forward(const Tensor& input, Tensor& output) override;
 	void backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) override;
+	void get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) override;
 
-	bool has_parameter = 1;
 	Tensor weights; // weights are stored in a Tensor
 	Tensor biases; // biases are stored in a Tensor
 	Tensor grad_weights; // grad_weights are stored in a Tensor
@@ -115,7 +113,8 @@ public:
 	void forward(const Tensor& input, Tensor& output) override;
 	void backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) override;
 
-	bool has_parameter = 1;
+	void get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) override;
+
 	Tensor weights; // weights are stored in a Tensor
 	Tensor biases; // biases are stored in a Tensor
 	Tensor grad_weights; // grad_weights are stored in a Tensor
@@ -127,8 +126,8 @@ private:
 	int kernel_size;
 	cl::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, int, int, int, int> Convolution_forward_kernel;
 	// Convolution_forward_kernel(input, output, weights, biases, input_channels, input_size, output_channels, kernel_size)
-	cl::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer, int, int, int, int> Convolution_backward_weights_kernel;//h = current_output_channels
-	// for(h in output_channels) Convolution_backward_kernel(grad_output, input, grad_weights, h, input_channels, input_size, kernel_size)
+	cl::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer, int, int, int, int> Convolution_backward_weights_kernel;
+	// Convolution_backward_kernel(grad_output, input, grad_weights, input_channels, input_size, output_channels, kernel_size)
 	cl::make_kernel<cl::Buffer, cl::Buffer, int, int> Convolution_backward_biases_kernel;
 	// Convolution_backward_biases_kernel(grad_output, grad_biases, output_channels, output_size = input_size-kernel_size+1)
 	cl::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer, int, int, int, int> Convolution_backward_input_kernel;
@@ -155,8 +154,8 @@ public:
 	void Get_Tensor(Tensor& output) override;
 	void forward(const Tensor& input, Tensor& output) override;
 	void backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) override;
+	void get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) override;
 
-	bool has_parameter = 0;
 private:
 	int input_channels;
 	int input_size;
@@ -165,8 +164,11 @@ private:
 	// Pooling_forward_kernel(input, output, max_indices, input_channels, input_size, pool_size)
 	cl::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer, int, int, int> Pooling_backward_kernel;
 	// Pooling_backward_kernel(grad_output, grad_input, max_indices, input_channels, input_size, pool_size)
+	cl::make_kernel<cl::Buffer, int> gradient_reset_kernel;
+	// gradient_reset_kernel(grad_input,input_channels*input_size*input_size)
 	cl::EnqueueArgs enqueue_args_forward;
 	cl::EnqueueArgs enqueue_args_backward;
+	cl::EnqueueArgs enqueue_args_reset_gradients;
 	cl::Buffer max_indices; // Store the relative (i,j) index of the maximum value in the pool_size x pool_size window for each output element
 };
 
@@ -178,8 +180,8 @@ public:
 	void Get_Tensor(Tensor& output) override;
 	void forward(const Tensor& input, Tensor& output) override;
 	void backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) override;
+	void get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) override;
 
-	bool has_parameter = 0;
 private:
 	int input_channels;
 	int input_size;

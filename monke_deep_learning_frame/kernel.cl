@@ -1,11 +1,50 @@
 //kernel.cl
 //universal 
+
 __kernel void gradient_decent(__global float* V, __global float* grad_V, float learning_rate, int size) {
 	int id = get_global_id(0);
 	if (id < size) {
 		V[id] -= learning_rate * grad_V[id];
-		grad_V[id] = 0.0f; // Reset gradient after update
+
 	}
+}
+__kernel void reset_gradient( __global float* grad_V,  int size){
+	int id = get_global_id(0);
+	if(id < size){
+		grad_V[id] = 0;
+	}
+}
+__kernel void adam_update(
+    __global float* param,
+    __global float* grad,
+    __global float* m,
+    __global float* v,
+    float learning_rate,
+    float beta1,
+    float beta2,
+    float epsilon,
+    int t, // Current timestep
+    int size)
+{
+    int gid = get_global_id(0);
+    if (gid < size) {
+        float g = grad[gid]; // Current gradient
+
+        // Update biased first moment estimate
+        m[gid] = beta1 * m[gid] + (1.0f - beta1) * g;
+
+        // Update biased second raw moment estimate
+        v[gid] = beta2 * v[gid] + (1.0f - beta2) * g * g; // g * g for element-wise square
+
+        // Compute bias-corrected first moment estimate
+        float m_hat = m[gid] / (1.0f - pow(beta1, (float)t)); // pow(base, exponent)
+
+        // Compute bias-corrected second raw moment estimate
+        float v_hat = v[gid] / (1.0f - pow(beta2, (float)t));
+
+        // Update parameters
+        param[gid] -= learning_rate * m_hat / (sqrt(v_hat) + epsilon);
+    }
 }
 __kernel void relu_forward(__global float* input, __global float* output, int size) {
 	int id = get_global_id(0);
@@ -100,11 +139,14 @@ __kernel void convolution_forward(__global float* input, __global float* output,
 	}
 }
 
-__kernel void convolution_backward_weights(__global float* grad_output, __global float* input, __global float* grad_weights, int h, int input_channels, int input_size, int kernel_size){
-	int i = get_global_id(0);
-	int j = get_global_id(1);
-	int k = get_global_id(2);
-	if(i < input_channels && j < kernel_size && k < kernel_size) {
+__kernel void convolution_backward_weights(__global float* grad_output, __global float* input, __global float* grad_weights, int input_channels, int input_size, int output_channels, int kernel_size){
+	int h = get_global_id(0);
+	int i = get_global_id(1);
+	int jk = get_global_id(2);
+	if(h < output_channels && i < input_channels && jk < kernel_size*kernel_size) {
+		//jk = j * kernel_size + k
+		int j = jk / kernel_size; // row in kernel
+		int k = jk % kernel_size; // column in kernel
 		float sum = 0.0f;
 		int output_size = (input_size - kernel_size + 1);
 		for(int r = 0; r < output_size; r++) {
@@ -166,13 +208,13 @@ __kernel void pooling_forward(__global float* input, __global float* output, __g
 	int c = get_global_id(2);
 	int output_channels = input_channels;
 	int output_size = input_size / pool_size;
-	if(h < input_channels,r < output_size, c < output_size){
+	if(h < input_channels && r < output_size && c < output_size){
 		float max_val = input[h*(input_size*input_size) + (r*pool_size)*input_size + (c*pool_size)];
 		//input[h][r*pool_size][c*pool_size]
 		int max_i = 0;
 		int max_j = 0;
-		for(int i = 0; i < input_size; ++i){
-			for(int j = 0; j < input_size; ++j){
+		for(int i = 0; i < pool_size; ++i){
+			for(int j = 0; j < pool_size; ++j){
 				int input_index = h*(input_size*input_size) + (r*pool_size+i)*input_size + (c*pool_size+j);
 				//input[h][r*pool_size+i][c*pooling_size+j]
 				if(input[input_index] > max_val){
@@ -197,7 +239,7 @@ __kernel void pooling_backward(__global float* grad_output, __global float* grad
 	int c = get_global_id(2);
 	int output_channels = input_channels;
 	int output_size = input_size / pool_size;
-	if(h < input_channels,r < output_size, c < output_size){
+	if(h < input_channels && r < output_size && c < output_size){
 		int max_indices_index = h*(output_size*output_size*2) + r*(output_size*2) + c*2;
 		int max_i = max_indices[max_indices_index];
 		int max_j = max_indices[max_indices_index+1];

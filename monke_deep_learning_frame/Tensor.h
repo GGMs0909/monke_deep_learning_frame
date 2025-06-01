@@ -28,6 +28,9 @@ public:
     // 取得 Tensor 的總元素數量
     size_t size() const;
 
+	// 取得 Tensor 的形狀
+	const std::vector<int>& get_shape() const;
+
     // 根據索引取得元素 (const 版本)
     float get(const std::vector<int>& index) const;
 
@@ -43,12 +46,12 @@ public:
 
     const float* data_ptr() const;
 
-	void copy_from(const Tensor& other);
+    void share_buffer_and_reshape(const Tensor& other, const std::vector<int>& new_shape);
 	void transfer_to_gpu();
 	void transfer_to_cpu();
 
     // 打印 Tensor 的形狀和部分內容 (方便調試)
-    void print(size_t limit = 10) const;
+    void print(size_t limit = 10) ;
 
 private:
     // 計算總元素數量

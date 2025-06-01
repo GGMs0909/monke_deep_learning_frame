@@ -1,3 +1,4 @@
+//optimizer.h
 #pragma once
 #include "opencl_runtime.h"
 //optimizer.h
@@ -12,6 +13,8 @@ public:
 	// Apply the optimizer to the model's parameters
 	virtual void update(std::vector<Tensor*> parameters, std::vector<Tensor*> grad_parameters) = 0;
 	// Reset gradients will done in update
+    virtual void initialize_moments(const std::vector<Tensor*>& parameters) {}
+    virtual void reset(std::vector<Tensor*> parameters, std::vector<Tensor*> grad_parameters) = 0;
 };
 
 class GradientDescent : public Optimizer {
@@ -19,7 +22,40 @@ public:
 	GradientDescent(float learning_rate);
 	~GradientDescent() override;
 	void update(std::vector<Tensor*> parameters, std::vector<Tensor*> grad_parameters) override;
+    void reset(std::vector<Tensor*> parameters, std::vector<Tensor*> grad_parameters) override;
 private:
 	float learning_rate; // Learning rate for the optimizer
 	cl::make_kernel<cl::Buffer, cl::Buffer, float, int> kernel; // OpenCL kernel for gradient descent
+	cl::make_kernel < cl::Buffer, int> gradient_reset_kernel; // OpenCL kernel for resetting gradients 
+};
+
+class Adam : public Optimizer {
+public:
+    // Adam 建構子：學習率, beta1, beta2, epsilon
+    Adam(float learning_rate, float beta1, float beta2, float epsilon);
+    ~Adam() override;
+
+    // 實作 Adam 的更新邏輯
+    void update(std::vector<Tensor*> parameters, std::vector<Tensor*> grad_parameters) override;
+
+    // Adam 需要在第一次更新前初始化其動量向量 m 和 v
+    void initialize_moments(const std::vector<Tensor*>& parameters) override;
+    void reset(std::vector<Tensor*> parameters, std::vector<Tensor*> grad_parameters) override;
+
+private:
+    float learning_rate;
+    float beta1;
+    float beta2;
+    float epsilon;
+    int t; // 時間步計數器
+
+    // 儲存每個參數的動量向量 (m 和 v)
+    // 這些 Tensor 的生命週期由 Adam 優化器管理
+    std::vector<Tensor> m; // First moment vector
+    std::vector<Tensor> v; // Second moment vector
+
+    // OpenCL Kernel for Adam update
+    // Args: param_buffer, grad_buffer, m_buffer, v_buffer, learning_rate, beta1, beta2, epsilon, t, size
+    cl::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, float, float, float, float, int, int> adam_kernel;
+    cl::make_kernel < cl::Buffer, int> gradient_reset_kernel; // OpenCL kernel for resetting gradients 
 };
