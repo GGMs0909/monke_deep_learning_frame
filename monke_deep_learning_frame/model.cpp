@@ -13,6 +13,7 @@ Model::~Model() {
 }
 void Model::add_layer(Layer* layer) {
 	// Add a layer to the model
+	std::cout << "Adding layer: " << layer->get_name() << std::endl;
 	layers.push_back(layer);
 }
 void Model::compile() {
@@ -60,11 +61,14 @@ void Model::forward(const Tensor& input, Tensor& output) {
 }
 void Model::forward(const Tensor& input, Tensor& output, const Tensor& real, float& loss_value) {
 	// Forward pass with loss calculation
+	std::cout << "Forward pass with loss calculation." << std::endl;
 	inputs[0] = input; // Set the input for the first layer
+
 	for (size_t i = 0; i < layers.size(); ++i) {
 		std::cout << layers[i]->get_name() << std::endl;
 		layers[i]->forward(inputs[i], inputs[i + 1]);
 	}
+
 	output = inputs.back(); // The output of the last layer
 	loss_value = lossfunction->calculate(output, real);
 }
@@ -72,7 +76,8 @@ void Model::backward(const Tensor& prep, const Tensor& real) {
 	// Backward pass through the model
 	lossfunction->backward(prep, real, grad_inputs.back());
 	for (int i = layers.size() - 1; i > 0; --i) {
-		
+		// Backward pass through each layer
+		std::cout << layers[i]->get_name() << std::endl;
 		layers[i]->backward(grad_inputs[i + 1], inputs[i], grad_inputs[i]);
 	}
 }

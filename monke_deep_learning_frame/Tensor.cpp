@@ -103,9 +103,7 @@ const float* Tensor::data_ptr() const {
 }
 
 void Tensor::copy_from(const Tensor& other) {
-	if (shape != other.shape) {
-		throw std::invalid_argument("Shape mismatch");
-	}
+
 	data = other.data; // 直接複製資料
 	sizebyte = data.size() * sizeof(float);
 
