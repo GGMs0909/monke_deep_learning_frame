@@ -10,6 +10,7 @@ int main() {
 		*new MeanSquaredError(10),
 		*new GradientDescent(0.01f)
 	);
+	M.add_layer(new Convolution())
 	M.add_layer(new Dense(10, 20));
 	M.add_layer(new Relu(20));
 	M.add_layer(new Dense(20, 10));

@@ -4,7 +4,12 @@
 #include <vector>
 #include <string>
 #include <stdexcept>
-
+//Relu(int input_size);
+//Softmax(int input_size);
+//Dense(int input_size, int output_size);
+//Convolution(int input_channels, int input_size, int output_channels, int kernel_size);
+//Pooling(int input_channels, int input_size, int pool_size);
+//Flatten_3D(int input_channels, int input_size);
 
 
 class Layer {
