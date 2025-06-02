@@ -139,7 +139,6 @@
     <ClCompile Include="loss.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="model.cpp" />
-    <ClCompile Include="monke_deep_learning_frame.cpp" />
     <ClCompile Include="opencl_runtime.cpp" />
     <ClCompile Include="optimizer.cpp" />
     <ClCompile Include="Tensor.cpp" />

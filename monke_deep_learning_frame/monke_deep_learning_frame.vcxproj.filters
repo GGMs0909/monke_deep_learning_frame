@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="monke_deep_learning_frame.cpp">
-      <Filter>來源檔案</Filter>
-    </ClCompile>
     <ClCompile Include="Tensor.cpp">
       <Filter>來源檔案</Filter>
     </ClCompile>
