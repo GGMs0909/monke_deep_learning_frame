@@ -157,7 +157,10 @@ void Tensor::print(size_t limit)  {
     for (size_t i = 0; i < shape.size(); ++i) {
         std::cout << shape[i] << (i == shape.size() - 1 ? "" : ", ");
     }
-    size_t elements_to_print = min(limit, data.size());
+    size_t elements_to_print = data.size();
+	if (elements_to_print > limit) {
+		elements_to_print = limit; // 限制輸出元素數量
+	}
     std::cout << "], Data (first " << limit << " elements): [";
     for (size_t i = 0; i < elements_to_print; ++i) { // Cast limit to size_t
         std::cout << data[i] << (i == elements_to_print - 1 ? "" : ", ");
