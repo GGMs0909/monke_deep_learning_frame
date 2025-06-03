@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <sstream> // std::stringstream
 
-// 建構子：根據形狀初始化 Tensor
 Tensor::Tensor(const std::vector<int>& shape) : shape(shape) {
     calculate_strides();
     data = std::vector<float>(calculate_total_size(),0);
@@ -13,14 +12,14 @@ Tensor::Tensor(const std::vector<int>& shape) : shape(shape) {
         throw std::runtime_error("Tensor constructor: Failed to create OpenCL buffer (cl_buffer() check failed).");
     }
 
-    // 嘗試執行一個寫入操作，確保緩衝區是可用的
+
     float temp_zero = 0.0f;
     cl_int write_err = opencl_runtime::getInstance().get_queue().enqueueWriteBuffer(
-        cl_buffer,          // 目標緩衝區
-        CL_TRUE,            // 阻塞寫入 (同步)
-        0,                  // 偏移量
-        sizeof(float),      // 寫入一個 float
-        &temp_zero          // 寫入的數據
+        cl_buffer,         
+        CL_TRUE,         
+        0,               
+        sizeof(float),     
+        &temp_zero       
     );
 
     if (write_err != CL_SUCCESS) {
@@ -29,7 +28,6 @@ Tensor::Tensor(const std::vector<int>& shape) : shape(shape) {
     }
 }
 
-// 建構子：從現有資料和形狀建立 Tensor (複製資料)
 Tensor::Tensor(const std::vector<int>& shape, const std::vector<float>& data) : shape(shape), data(data) {
     if (data.size() != calculate_total_size()) {
         throw std::invalid_argument("Data size does not match shape");
@@ -41,14 +39,14 @@ Tensor::Tensor(const std::vector<int>& shape, const std::vector<float>& data) : 
         throw std::runtime_error("Tensor constructor: Failed to create OpenCL buffer (cl_buffer() check failed).");
     }
 
-    // 嘗試執行一個寫入操作，確保緩衝區是可用的
+
     float temp_zero = 0.0f;
     cl_int write_err = opencl_runtime::getInstance().get_queue().enqueueWriteBuffer(
-        cl_buffer,          // 目標緩衝區
-        CL_TRUE,            // 阻塞寫入 (同步)
-        0,                  // 偏移量
-        sizeof(float),      // 寫入一個 float
-        &temp_zero          // 寫入的數據
+        cl_buffer,         
+        CL_TRUE,           
+        0,             
+        sizeof(float),      
+        &temp_zero         
     );
 
     if (write_err != CL_SUCCESS) {
@@ -62,16 +60,16 @@ Tensor::~Tensor() {
 	//std::cout << "Tensor destructor called." << std::endl;
 }
 
-// 取得 Tensor 的總元素數量
+
 size_t Tensor::size() const {
     return data.size();
 }
-// 取得 Tensor 的形狀
+
 const std::vector<int>& Tensor::get_shape() const {
 	return shape;
 }
 
-// 根據索引取得元素 (const 版本)
+
 float Tensor::get(const std::vector<int>& index) const {
     /*
     size_t linear_index = get_linear_index(index);
@@ -83,7 +81,7 @@ float Tensor::get(const std::vector<int>& index) const {
     return data[get_linear_index(index)];
 }
 
-// 根據索引取得元素的引用 (可修改 Tensor 內容)
+
 float& Tensor::get(const std::vector<int>& index) {
     /*
     size_t linear_index = get_linear_index(index);
@@ -95,7 +93,7 @@ float& Tensor::get(const std::vector<int>& index) {
     return data[get_linear_index(index)];
 }
 
-// 取得 OpenCL 緩衝區
+
 cl::Buffer Tensor::get_buffer() {
 	if (!cl_buffer()) {
 		throw std::runtime_error("OpenCL buffer is not initialized");
@@ -110,7 +108,6 @@ cl::Buffer Tensor::get_buffer() const {
 	return cl_buffer;
 }
 
-// 取得指向內部資料的指標 (謹慎使用)
 float* Tensor::data_ptr() {
     return data.data();
 }
@@ -123,14 +120,14 @@ void Tensor::share_buffer_and_reshape(const Tensor& other, const std::vector<int
     if (!other.cl_buffer()) {
         throw std::runtime_error("Tensor: Cannot share buffer from an uninitialized GPU buffer.");
     }
-    this->cl_buffer = other.cl_buffer; // 共享 cl_buffer_
-    this->shape = new_shape;             // 設置新形狀
-    this->sizebyte = other.sizebyte; // 大小不變
-    // CPU 數據可選：如果需要，可以清除或設置為空
+    this->cl_buffer = other.cl_buffer;
+    this->shape = new_shape;             
+    this->sizebyte = other.sizebyte; 
+
     this->data = other.data;
 }
 
-// 將 Tensor 資料傳輸到 GPU (OpenCL)
+
 void Tensor::transfer_to_gpu() {
 	if (cl_buffer()) {
 		cl_buffer = cl::Buffer(opencl_runtime::getInstance().get_context(), CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizebyte, data.data());
@@ -152,14 +149,14 @@ void Tensor::transfer_to_cpu()  {
 
 // Fix the problematic line in the print method
 void Tensor::print(size_t limit)  {
-    transfer_to_cpu(); // 確保資料在 CPU 上
+    transfer_to_cpu(); 
     std::cout << "Shape: [";
     for (size_t i = 0; i < shape.size(); ++i) {
         std::cout << shape[i] << (i == shape.size() - 1 ? "" : ", ");
     }
     size_t elements_to_print = data.size();
 	if (elements_to_print > limit) {
-		elements_to_print = limit; // 限制輸出元素數量
+		elements_to_print = limit; 
 	}
     std::cout << "], Data (first " << limit << " elements): [";
     for (size_t i = 0; i < elements_to_print; ++i) { // Cast limit to size_t
@@ -174,12 +171,12 @@ void Tensor::print(size_t limit)  {
     std::cout << std::endl;
 }
 
-// 計算總元素數量
+
 size_t Tensor::calculate_total_size() const {
     return std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<int>());
 }
 
-// 計算步長
+
 void Tensor::calculate_strides() {
     strides.resize(shape.size());
     size_t stride = 1;
@@ -189,7 +186,7 @@ void Tensor::calculate_strides() {
     }
 }
 
-// 將多維索引轉換為一維線性索引 (使用步長)
+
 inline size_t Tensor::get_linear_index(const std::vector<int>& index) const {
     if (index.size() != shape.size()) {
         throw std::invalid_argument("Incorrect number of indices");

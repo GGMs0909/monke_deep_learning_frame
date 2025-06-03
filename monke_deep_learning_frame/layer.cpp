@@ -17,18 +17,16 @@ Layer::~Layer() {
 }
 
 Relu::Relu(int input_size)
-    : input_size(input_size), // 初始化 total_elements_
-    // 在這裡直接初始化 cl::make_kernel 成員
+    : input_size(input_size), 
     Relu_forward_kernel(opencl_runtime::getInstance().get_program(), "relu_forward"),
     Relu_backward_kernel(opencl_runtime::getInstance().get_program(), "relu_backward"),
-    // 在這裡直接初始化 cl::EnqueueArgs 成員
     enqueue_args_forward(opencl_runtime::getInstance().get_queue(), cl::NDRange(input_size)),
     enqueue_args_backward(opencl_runtime::getInstance().get_queue(), cl::NDRange(input_size))
 {
-    // 構造函數體內現在可以保持空白，或者執行其他不涉及成員賦值的邏輯
+
 }
 Relu::~Relu() {
-	// 清理資源
+
 }
 std::string Relu::get_name() {
 	return "relu";
@@ -37,13 +35,13 @@ void Relu::Get_Tensor(Tensor& output) {
 	output = Tensor({ input_size });
 }
 void Relu::forward(const Tensor& input, Tensor& output) {
-	// 使用 OpenCL 內核進行前向傳播
-	opencl_runtime::getInstance().get_queue().finish(); // 確保前一個操作完成
+
+	opencl_runtime::getInstance().get_queue().finish(); 
 	Relu_forward_kernel(enqueue_args_forward, input.get_buffer(), output.get_buffer(), input_size);
 }
 void Relu::backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) {
-	// 使用 OpenCL 內核進行反向傳播
-	opencl_runtime::getInstance().get_queue().finish(); // 確保前一個操作完成
+
+	opencl_runtime::getInstance().get_queue().finish(); 
 	Relu_backward_kernel(enqueue_args_backward, grad_output.get_buffer(), input.get_buffer(), grad_input.get_buffer(), input_size);
 }
 void Relu::get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) {
@@ -52,18 +50,18 @@ void Relu::get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>
 
 
 Softmax::Softmax(int input_size)
-	: input_size(input_size), // 初始化 total_elements_
-	// 在這裡直接初始化 cl::make_kernel 成員
+	: input_size(input_size), 
+
 	Softmax_forward_kernel(opencl_runtime::getInstance().get_program(), "softmax_forward"),
 	Softmax_backward_kernel(opencl_runtime::getInstance().get_program(), "softmax_backward"),
-	// 在這裡直接初始化 cl::EnqueueArgs 成員
+
 	enqueue_args_forward(opencl_runtime::getInstance().get_queue(), cl::NDRange(input_size)),
 	enqueue_args_backward(opencl_runtime::getInstance().get_queue(), cl::NDRange(input_size))
 {
-	// 構造函數體內現在可以保持空白，或者執行其他不涉及成員賦值的邏輯
+
 }
 Softmax::~Softmax() {
-	// 清理資源
+
 }
 std::string Softmax::get_name() {
 	return "softmax";
@@ -72,15 +70,15 @@ void Softmax::Get_Tensor(Tensor& output) {
 	output = Tensor({ input_size });
 }
 void Softmax::forward(const Tensor& input, Tensor& output) {
-	// 使用 OpenCL 內核進行前向傳播
-	opencl_runtime::getInstance().get_queue().finish(); // 確保前一個操作完成
+
+	opencl_runtime::getInstance().get_queue().finish(); 
 	Softmax_forward_kernel(enqueue_args_forward, input.get_buffer(), output.get_buffer(), input_size);
-	// 保存輸出以便在反向傳播中使用
-	output_backup = output.get_buffer(); // 保存輸出到 output_backup
+
+	output_backup = output.get_buffer();
 }
 void Softmax::backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) {
-	// 使用 OpenCL 內核進行反向傳播
-	opencl_runtime::getInstance().get_queue().finish(); // 確保前一個操作完成
+
+	opencl_runtime::getInstance().get_queue().finish(); 
 	Softmax_backward_kernel(enqueue_args_backward, grad_output.get_buffer(), output_backup, grad_input.get_buffer(), input_size);
 }
 void Softmax::get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) {
@@ -88,12 +86,12 @@ void Softmax::get_parameters(std::vector<Tensor*>& parameters, std::vector<Tenso
 
 Dense::Dense(int input_size, int output_size)
 	: input_size(input_size), output_size(output_size),
-	// 在這裡直接初始化 cl::make_kernel 成員
+
 	Dense_forward_kernel(opencl_runtime::getInstance().get_program(), "dense_forward"),
 	Dense_backward_wb_kernel(opencl_runtime::getInstance().get_program(), "dense_backward_wb"),
 	Dense_backward_input_kernel(opencl_runtime::getInstance().get_program(), "dense_backward_input"),
 	update_vector_kernel(opencl_runtime::getInstance().get_program(), "update_vector"),
-	// 在這裡直接初始化 cl::EnqueueArgs 成員
+
 	enqueue_args_forward(opencl_runtime::getInstance().get_queue(), cl::NDRange(output_size)),
 	enqueue_args_backward_wb(opencl_runtime::getInstance().get_queue(), cl::NDRange(output_size)),
 	enqueue_args_backward_input(opencl_runtime::getInstance().get_queue(), cl::NDRange(input_size)),
@@ -124,7 +122,7 @@ Dense::Dense(int input_size, int output_size)
 	biases.transfer_to_gpu();
 }
 Dense::~Dense() {
-	// 清理資源
+
 }
 std::string Dense::get_name() {
 	return "dense";
@@ -133,18 +131,18 @@ void Dense::Get_Tensor(Tensor& output) {
 	output = Tensor({ output_size });
 }
 void Dense::forward(const Tensor& input, Tensor& output) {
-	// 使用 OpenCL 內核進行前向傳播
-	opencl_runtime::getInstance().get_queue().finish(); // 確保前一個操作完成
+
+	opencl_runtime::getInstance().get_queue().finish(); 
 	Dense_forward_kernel(enqueue_args_forward, input.get_buffer(), output.get_buffer(), weights.get_buffer(), biases.get_buffer(), input_size, output_size);
 }
 void Dense::backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) {
-	// 使用 OpenCL 內核進行反向傳播
-	opencl_runtime::getInstance().get_queue().finish(); // 確保前一個操作完成
+
+	opencl_runtime::getInstance().get_queue().finish(); 
 	Dense_backward_wb_kernel(enqueue_args_backward_wb, grad_output.get_buffer(), input.get_buffer(), grad_weights.get_buffer(), grad_biases.get_buffer(), input_size, output_size);
 	Dense_backward_input_kernel(enqueue_args_backward_input, grad_output.get_buffer(), weights.get_buffer(), grad_input.get_buffer(), input_size, output_size);
 }
 void Dense::get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) {
-	// 將權重和偏置添加到參數和梯度參數列表中
+
 	weights.print();
 	biases.print();
 	grad_weights.print();
@@ -158,13 +156,13 @@ void Dense::get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*
 
 Convolution::Convolution(int input_channels, int input_size, int output_channels, int kernel_size)
 	: input_channels(input_channels), input_size(input_size), output_channels(output_channels), kernel_size(kernel_size),
-	// 在這裡直接初始化 cl::make_kernel 成員
+
 	Convolution_forward_kernel(opencl_runtime::getInstance().get_program(), "convolution_forward"),
 	Convolution_backward_weights_kernel(opencl_runtime::getInstance().get_program(), "convolution_backward_weights"),
 	Convolution_backward_biases_kernel(opencl_runtime::getInstance().get_program(), "convolution_backward_biases"),
 	Convolution_backward_input_kernel(opencl_runtime::getInstance().get_program(), "convolution_backward_input"),
 	update_vector_kernel(opencl_runtime::getInstance().get_program(), "update_vector"),
-	// 在這裡直接初始化 cl::EnqueueArgs 成員
+
 	enqueue_args_forward(opencl_runtime::getInstance().get_queue(), cl::NDRange(output_channels, input_size - kernel_size + 1, input_size - kernel_size + 1)),
 	enqueue_args_backward_weights(opencl_runtime::getInstance().get_queue(), cl::NDRange(output_channels, input_channels, kernel_size*kernel_size)),
 	enqueue_args_backward_biases(opencl_runtime::getInstance().get_queue(), cl::NDRange(output_channels)),
@@ -194,7 +192,7 @@ Convolution::Convolution(int input_channels, int input_size, int output_channels
 	grad_biases.transfer_to_gpu();
 }
 Convolution::~Convolution() {
-	// 清理資源
+
 }
 std::string Convolution::get_name() {
 	return "convolution";
@@ -203,13 +201,13 @@ void Convolution::Get_Tensor(Tensor& output) {
 	output = Tensor({ output_channels, input_size - kernel_size + 1, input_size - kernel_size + 1 });
 }
 void Convolution::forward(const Tensor& input, Tensor& output) {
-	opencl_runtime::getInstance().get_queue().finish(); // 確保前一個操作完成
-	// 使用 OpenCL 內核進行前向傳播
+	opencl_runtime::getInstance().get_queue().finish();
+
 	Convolution_forward_kernel(enqueue_args_forward, input.get_buffer(), output.get_buffer(), weights.get_buffer(), biases.get_buffer(), input_channels, input_size, output_channels, kernel_size);
 }
 void Convolution::backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) {
-	// 使用 OpenCL 內核進行反向傳播
-	opencl_runtime::getInstance().get_queue().finish(); // 確保前一個操作完成
+
+	opencl_runtime::getInstance().get_queue().finish(); 
 	Convolution_backward_weights_kernel(enqueue_args_backward_weights, grad_output.get_buffer(), input.get_buffer(), grad_weights.get_buffer(), input_channels, input_size, output_channels, kernel_size);
 	Convolution_backward_biases_kernel(enqueue_args_backward_biases, grad_output.get_buffer(), grad_biases.get_buffer(), output_channels, input_size - kernel_size + 1);
 	Convolution_backward_input_kernel(enqueue_args_backward_input, grad_output.get_buffer(), weights.get_buffer(), grad_input.get_buffer(), input_channels, input_size, output_channels, kernel_size);
@@ -232,11 +230,11 @@ void Convolution::get_parameters(std::vector<Tensor*>& parameters, std::vector<T
 
 Pooling::Pooling(int input_channels, int input_size, int pool_size)
 	: input_channels(input_channels), input_size(input_size), pool_size(pool_size),
-	// 在這裡直接初始化 cl::make_kernel 成員
+
 	Pooling_forward_kernel(opencl_runtime::getInstance().get_program(), "pooling_forward"),
 	Pooling_backward_kernel(opencl_runtime::getInstance().get_program(), "pooling_backward"),
 	gradient_reset_kernel(opencl_runtime::getInstance().get_program(), "gradient_reset"),
-	// 在這裡直接初始化 cl::EnqueueArgs 成員
+
 	enqueue_args_forward(opencl_runtime::getInstance().get_queue(), cl::NDRange(input_channels, (input_size / pool_size), (input_size / pool_size))),
 	enqueue_args_backward(opencl_runtime::getInstance().get_queue(), cl::NDRange(input_channels, (input_size / pool_size), (input_size / pool_size))),
 	enqueue_args_reset_gradients(opencl_runtime::getInstance().get_queue(), cl::NDRange(input_channels* input_size* input_size))
@@ -249,7 +247,7 @@ Pooling::Pooling(int input_channels, int input_size, int pool_size)
 
 }
 Pooling::~Pooling() {
-	// 清理資源
+
 }
 std::string Pooling::get_name() {
 	return "pooling";
@@ -259,31 +257,31 @@ void Pooling::Get_Tensor(Tensor& output) {
 	output = Tensor({ input_channels, output_dim, output_dim });
 }
 void Pooling::forward(const Tensor& input, Tensor& output) {
-	// 使用 OpenCL 內核進行前向傳播
-	opencl_runtime::getInstance().get_queue().finish(); // 確保前一個操作完成
+
+	opencl_runtime::getInstance().get_queue().finish(); 
 	Pooling_forward_kernel(enqueue_args_forward, input.get_buffer(), output.get_buffer(), max_indices, input_channels, input_size, pool_size);
 }
 void Pooling::backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) {
-	// 使用 OpenCL 內核進行反向傳播
-	opencl_runtime::getInstance().get_queue().finish(); // 確保前一個操作完成
-	// 重置梯度
+
+	opencl_runtime::getInstance().get_queue().finish(); 
+
 	gradient_reset_kernel(enqueue_args_reset_gradients, grad_input.get_buffer(), input_channels * input_size * input_size);
 	Pooling_backward_kernel(enqueue_args_backward, grad_output.get_buffer(), grad_input.get_buffer(), max_indices, input_channels, input_size, pool_size);
 	
 	
 }
 void Pooling::get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) {
-	// Pooling 層沒有可訓練的參數，因此不需要添加到參數列表中
+
 }
 
 
 Flatten_3D::Flatten_3D(int input_channels, int input_size)
 	: input_channels(input_channels), input_size(input_size)
 { 
-	// Flatten_3D 層不需要 OpenCL 內核或 EnqueueArgs，因為它只是將多維張量展平為一維張量
+	
 }
 Flatten_3D::~Flatten_3D() {
-	// 清理資源
+
 }
 std::string Flatten_3D::get_name() {
 	return "flatten_3d";
@@ -293,16 +291,16 @@ void Flatten_3D::Get_Tensor(Tensor& output) {
 	output = Tensor({ total_elements });
 }
 void Flatten_3D::forward(const Tensor& input, Tensor& output) {
-	// 將 3D 張量展平為 1D 張量
+
 
 	output.share_buffer_and_reshape(input, { input_channels * input_size * input_size });
 }
 void Flatten_3D::backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) {
-	// 將 1D 梯度張量展平為 3D 張量
+
 	grad_input.share_buffer_and_reshape(grad_output, { input_channels, input_size, input_size });
 }
 void Flatten_3D::get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) {
-	// Flatten_3D 層沒有可訓練的參數，因此不需要添加到參數列表中
+
 }
 
 	

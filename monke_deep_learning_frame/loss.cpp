@@ -47,7 +47,7 @@ CrossEntropyLoss::~CrossEntropyLoss() {
 }
 float CrossEntropyLoss::calculate(const Tensor& pred, const Tensor& real) {
 	if (pred.size() != real.size()) {
-		throw std::invalid_argument("CrossEntropyLoss::calculate: 預測張量和真實張量的大小必須相同。");
+		throw std::invalid_argument("CrossEntropyLoss::calculate");
 	}
 	float loss = 0.0f;
 	const float epsilon = 1e-9f; 
@@ -61,7 +61,7 @@ float CrossEntropyLoss::calculate(const Tensor& pred, const Tensor& real) {
 }
 void CrossEntropyLoss::backward(const Tensor& pred, const Tensor& real, Tensor& grad_output) {
 	if (pred.size() != real.size() || pred.size() != grad_output.size()) {
-		throw std::invalid_argument("CrossEntropyLoss::backward: 預測張量、真實張量和梯度輸出張量的大小必須相同。");
+		throw std::invalid_argument("CrossEntropyLoss::backward");
 	}
 	const float epsilon = 1e-9f;
 	for (int i = 0; i < pred.size(); ++i) {
