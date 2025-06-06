@@ -28,6 +28,7 @@ public:
 
 	const std::vector<int>& get_shape() const;
 
+    void set(const std::vector<int>& index, float value);
 
     float get(const std::vector<int>& index) const;
 
