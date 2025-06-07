@@ -15,7 +15,7 @@ public:
 	void compile();
 	void compile(std::vector<Tensor*> parameters);
 	void forward(const Tensor& input, Tensor& output);
-	void forward(const Tensor& input, Tensor& output, const Tensor& real, float& loss_value); // Forward pass with loss calculation
+	float forward(const Tensor& input, Tensor& output, const Tensor& real); // Forward pass with loss calculation
 	void backward(const Tensor& prep, const Tensor& real); // Backward pass through the model
 	void update(); // Update model parameters using the optimizer
 	void reset();
