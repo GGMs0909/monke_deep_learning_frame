@@ -70,7 +70,7 @@ const std::vector<int>& Tensor::get_shape() const {
 }
 
 void Tensor::set(const std::vector<int>& index, float value) {
-    data[get_linear_index(index)] = value;  // 或內部訪問實際資料
+    data[get_linear_index(index)] = value; 
 }
 
 float Tensor::get(const std::vector<int>& index) const {
