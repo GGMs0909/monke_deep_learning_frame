@@ -75,7 +75,7 @@ void Model::forward(const Tensor& input, Tensor& output) {
 	output.transfer_to_cpu(); // Ensure output is on CPU for loss calculation
 	opencl_runtime::getInstance().get_queue().finish();
 }
-float Model::forward(const Tensor& input, Tensor& output, const Tensor& real) {
+float Model::forward_with_loss(const Tensor& input, Tensor& output, const Tensor& real) {
 	// Forward pass with loss calculation
 	std::cout << "Forward pass with loss calculation." << std::endl;
 	inputs[0] = input; // Set the input for the first layer
