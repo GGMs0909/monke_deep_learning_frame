@@ -28,7 +28,9 @@ void Model::compile() {
 	parameters = std::vector<Tensor*>(); // Store model parameters
 	grad_parameters = std::vector<Tensor*>(); // Store gradients of model parameters
 	// Initialize inputs and grad_inputs for each layer
+	std::cout << "Compiling " << layers.size() << " layers." << std::endl;
 	for (int i = 0; i < layers.size(); ++i) {
+		std::cout << i << " " << layers[i]->get_name() << std::endl;
 		layers[i]->Get_Tensor(inputs[i + 1]);
 		layers[i]->Get_Tensor(grad_inputs[i + 1]); // Get the output tensor shape
 

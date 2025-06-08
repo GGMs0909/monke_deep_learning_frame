@@ -66,7 +66,7 @@ int main() {
 	
 	cout << "performing forward pass..." << endl;
 	for (int i = 0; i < 100; ++i) {
-		M.forward(input, output, real, loss_value);
+		loss_value = M.forward_with_loss(input, output, real);
 		cout << "Loss value: " << loss_value << endl;
 		M.backward(output, real);
 		M.update();
