@@ -13,13 +13,13 @@ public:
 	~Model();
 	void add_layer(Layer* layer);
 	void compile();
-	void compile(std::vector<Tensor*> parameters);
 	void forward(const Tensor& input, Tensor& output);
 	float forward_with_loss(const Tensor& input, Tensor& output, const Tensor& real); // Forward pass with loss calculation
 	void backward(const Tensor& prep, const Tensor& real); // Backward pass through the model
 	void update(); // Update model parameters using the optimizer
 	void reset();
 	float get_gradient_norm(); // Calculate the norm of the gradients
+	void set_parameters(const std::vector<float> data);
 	//for debugging
 	void print_parameters() const; // Print model parameters for debugging
 	void print_grad_parameters() const; // Print gradients of model parameters for debugging

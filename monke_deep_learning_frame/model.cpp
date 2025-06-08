@@ -42,29 +42,7 @@ void Model::compile() {
 	reset();
 	opencl_runtime::getInstance().get_queue().finish();
 }
-void Model::compile(std::vector<Tensor*> parameters) {
 
-	inputs = std::vector<Tensor>(layers.size() + 1); // +1 for the output layer
-	grad_inputs = std::vector<Tensor>(layers.size() + 1); // +1 for the output layer
-	this->parameters = parameters;
-	grad_parameters.resize(parameters.size());
-	for (size_t i = 0; i < parameters.size(); ++i) {
-		grad_parameters[i] = new Tensor(parameters[i]->get_shape(), std::vector<float>(parameters[i]->size(), 0.0f));
-	}
-	// Initialize inputs and grad_inputs for each layer
-	for (int i = 0; i < layers.size(); ++i) {
-		layers[i]->Get_Tensor(inputs[i + 1]);
-		layers[i]->Get_Tensor(grad_inputs[i + 1]); // Get the output tensor shape
-
-	}
-	std::cout << "Model compiled with provided parameters." << std::endl;
-	// Initialize optimizer moments if needed
-	std::cout << "Initializing optimizer moments." << std::endl;
-	optimizer->initialize_moments(parameters);
-	reset();
-	opencl_runtime::getInstance().get_queue().finish();
-	// Compile the model with provided parameters
-}
 void Model::forward(const Tensor& input, Tensor& output) {
 	// Forward pass through the model
 	inputs[0] = input; // Set the input for the first layer
@@ -125,6 +103,21 @@ void Model::reset() {
 	optimizer->reset(parameters, grad_parameters);
 	opencl_runtime::getInstance().get_queue().finish();
 
+}
+
+void Model::set_parameters(const std::vector<float> data) {
+	// Set model parameters from a vector of floats
+	int offset = 0;
+	if (data.size() != parameters.size()) {
+		throw std::invalid_argument("Data size does not match number of parameters");
+	}
+	for (size_t i = 0; i < parameters.size(); ++i) {
+		for (int j = 0; j < parameters[i]->data.size(); ++j) {
+			parameters[i]->data[i] = data[offset + i]; // Set parameter values
+		}
+		offset += parameters[i]->data.size(); // Update offset for next parameter
+		parameters[i]->transfer_to_gpu(); // Transfer updated parameters to GPU
+	}
 }
 
 
