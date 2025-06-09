@@ -29,7 +29,7 @@ Relu::~Relu() {
 
 }
 std::string Relu::get_name() {
-	return "relu";
+	return "relu " + std::to_string(input_size) +" -> " + std::to_string(input_size);
 }
 void Relu::Get_Tensor(Tensor& output) {
 	output = Tensor({ input_size });
@@ -64,7 +64,7 @@ Softmax::~Softmax() {
 
 }
 std::string Softmax::get_name() {
-	return "softmax";
+	return "softmax " + std::to_string(input_size) + " -> " + std::to_string(input_size);
 }
 void Softmax::Get_Tensor(Tensor& output) {
 	output = Tensor({ input_size });
@@ -125,7 +125,7 @@ Dense::~Dense() {
 
 }
 std::string Dense::get_name() {
-	return "dense";
+	return "dense " + std::to_string(input_size) + " -> " + std::to_string(output_size);
 }
 void Dense::Get_Tensor(Tensor& output) {
 	output = Tensor({ output_size });
@@ -195,7 +195,8 @@ Convolution::~Convolution() {
 
 }
 std::string Convolution::get_name() {
-	return "convolution";
+	return "convolution " + std::to_string(input_channels) + "x" + std::to_string(input_size) + "x" + std::to_string(input_size) + 
+		" -> " + std::to_string(output_channels) + "x" + std::to_string(input_size-kernel_size+1)+"x" + std::to_string(input_size - kernel_size + 1);
 }
 void Convolution::Get_Tensor(Tensor& output) {
 	output = Tensor({ output_channels, input_size - kernel_size + 1, input_size - kernel_size + 1 });
@@ -250,7 +251,8 @@ Pooling::~Pooling() {
 
 }
 std::string Pooling::get_name() {
-	return "pooling";
+	return "pooling " + std::to_string(input_channels) + "x" + std::to_string(input_size) + "x" + std::to_string(input_size) +
+		" -> " + std::to_string(input_channels) + "x" + std::to_string(input_size / pool_size) + "x" + std::to_string(input_size / pool_size);
 }
 void Pooling::Get_Tensor(Tensor& output) {
 	int output_dim = input_size / pool_size;
@@ -284,7 +286,8 @@ Flatten_3D::~Flatten_3D() {
 
 }
 std::string Flatten_3D::get_name() {
-	return "flatten_3d";
+	return "flatten3D " + std::to_string(input_channels) + "x" + std::to_string(input_size) + "x" + std::to_string(input_size) +
+		" -> " + std::to_string(input_channels*input_size*input_size);
 }
 void Flatten_3D::Get_Tensor(Tensor& output) {
 	int total_elements = input_channels * input_size * input_size;

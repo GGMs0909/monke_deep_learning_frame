@@ -82,7 +82,9 @@ float Model::forward_with_loss(const Tensor& input, Tensor& output, const Tensor
 	output = inputs.back(); // The output of the last layer
 	output.transfer_to_cpu(); // Ensure output is on CPU for loss calculation
 	opencl_runtime::getInstance().get_queue().finish();
-	return lossfunction->calculate(output, real);
+	// Calculate loss using the loss function
+	float loss = lossfunction->calculate(output, real);
+	return loss;
 	
 }
 void Model::backward(const Tensor& prep, const Tensor& real) {
