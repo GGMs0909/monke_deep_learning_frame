@@ -63,7 +63,7 @@ void Model::compile(std::vector<int> input_shape, Loss& lossfunction, Optimizer&
 	std::cout << "Model layers compiled." << std::endl;
 	// Initialize optimizer moments if needed
 	std::cout << "Initializing optimizer moments." << std::endl;
-	optimizer->initialize_moments(parameters);
+	this->optimizer->initialize_moments(parameters);
 	reset();
 	opencl_runtime::getInstance().get_queue().finish();
 }
