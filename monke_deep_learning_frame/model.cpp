@@ -33,7 +33,7 @@ void Model::compile() {
 	for (int i = 0; i < layers.size(); ++i) {
 		if (!layers[i]) {
 			std::cerr << "Error: layer[" << i << "] is nullptr!" << std::endl;
-			continue; // Á×§K crash
+			continue; // crash
 		}
 		std::cout << i << " " << layers[i]->get_name() << std::endl;
 		layers[i]->Get_Tensor(inputs[i + 1]);
