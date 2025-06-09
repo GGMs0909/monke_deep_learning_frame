@@ -143,10 +143,10 @@ void Dense::backward(const Tensor& grad_output, const Tensor& input, Tensor& gra
 }
 void Dense::get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) {
 
-	weights.print();
-	biases.print();
-	grad_weights.print();
-	grad_biases.print();
+	//weights.print();
+	//biases.print();
+	//grad_weights.print();
+	//grad_biases.print();
 	parameters.push_back(&weights);
 	parameters.push_back(&biases);
 	grad_parameters.push_back(&grad_weights);
@@ -214,14 +214,10 @@ void Convolution::backward(const Tensor& grad_output, const Tensor& input, Tenso
 	Convolution_backward_input_kernel(enqueue_args_backward_input, grad_output.get_buffer(), weights.get_buffer(), grad_input.get_buffer(), input_channels, input_size, output_channels, kernel_size);
 }
 void Convolution::get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) {
-	weights.transfer_to_cpu();
-	biases.transfer_to_cpu();
-	grad_weights.transfer_to_cpu();
-	grad_biases.transfer_to_cpu();
-	weights.print();
-	biases.print();
-	grad_weights.print();
-	grad_biases.print();
+	//weights.print();
+	//biases.print();
+	//grad_weights.print();
+	//grad_biases.print();
 	parameters.push_back(&weights);
 	parameters.push_back(&biases);
 	grad_parameters.push_back(&grad_weights);

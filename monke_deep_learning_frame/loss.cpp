@@ -18,7 +18,7 @@ MeanSquaredError::~MeanSquaredError() {
 }
 float MeanSquaredError::calculate(const Tensor& pred, const Tensor& real) {
 	if (pred.size() != real.size()) {
-		throw std::invalid_argument("Predicted and real tensors must have the same size.");
+		throw std::invalid_argument("Predicted and real tensors must have the same size.(" +std::to_string(pred.size()) + "vs" + std::to_string(real.size())+")");
 	}
 	float loss = 0.0f;
 	for (int i = 0; i < input_size; ++i) {
@@ -47,7 +47,7 @@ CrossEntropyLoss::~CrossEntropyLoss() {
 }
 float CrossEntropyLoss::calculate(const Tensor& pred, const Tensor& real) {
 	if (pred.size() != real.size()) {
-		throw std::invalid_argument("CrossEntropyLoss::calculate");
+		throw std::invalid_argument("Predicted and real tensors must have the same size.(" + std::to_string(pred.size()) + "vs" + std::to_string(real.size()) + ")");
 	}
 	float loss = 0.0f;
 	const float epsilon = 1e-9f; 
