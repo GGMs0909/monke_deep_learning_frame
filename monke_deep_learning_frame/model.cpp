@@ -15,6 +15,10 @@ Model::~Model() {
 	}
 }
 void Model::add_layer(Layer* layer) {
+	if (compiled) {
+		std::cerr << "Error: Cannot add layer after model is compiled." << std::endl;
+		return; // If already compiled, skip adding layers
+	}
 	// Add a layer to the model
 	std::cout << "Adding layer: " << layer->get_name() << std::endl;
 	layers.push_back(layer);
