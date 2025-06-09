@@ -1,11 +1,10 @@
 #include "model.h"
 
-Model::Model(Loss& lossfunction, Optimizer& optimizer) :
+Model::Model() :
 	gradient_norm_kernel(opencl_runtime::getInstance().get_program(), "calculate_gradient_norm")
 {
 	// Initialize the model
-	this->lossfunction = &lossfunction;
-	this->optimizer = &optimizer;
+
 }
 
 Model::~Model() {
@@ -23,17 +22,27 @@ void Model::add_layer(Layer* layer) {
 	std::cout << "Adding layer: " << layer->get_name() << std::endl;
 	layers.push_back(layer);
 }
-void Model::compile() {
+void Model::compile(std::vector<int> input_shape, Loss& lossfunction, Optimizer& optimizer) {
 	if (compiled) {
 		std::cout << "Model already compiled." << std::endl;
 		return; // If already compiled, skip compilation
 	}
+	// Compile the model with the given input shape, loss function, and optimizer
+	std::cout << "Compiling model with input shape: ";
+	for (const int& dim : input_shape) {
+		std::cout << dim << " ";
+	}
+	std::cout << std::endl;
+	this->lossfunction = &lossfunction; // Set the loss function
+	this->optimizer = &optimizer; // Set the optimizer
+
 	compiled = true; // Mark the model as compiled
 	// Compile the model, prepare inputs and parameters
 	std::cout << "Initializing inputs." << std::endl;
 	inputs = std::vector<Tensor>(layers.size() + 1); // +1 for the output layer
 	grad_inputs = std::vector<Tensor>(layers.size() + 1); // +1 for the output layer
-	grad_inputs[0] = Tensor({ 1, 1, 1 }); // Initialize grad_inputs[0] with a dummy shape
+	inputs[0] = Tensor(input_shape); // Input tensor for the first layer
+	grad_inputs[0] = Tensor(input_shape); // Gradient tensor for the first layer (input layer)
 	std::cout << "Initializing parameters." << std::endl;
 	parameters = std::vector<Tensor*>(); // Store model parameters
 	grad_parameters = std::vector<Tensor*>(); // Store gradients of model parameters
@@ -90,7 +99,7 @@ float Model::forward_with_loss(const Tensor& input, Tensor& output, const Tensor
 void Model::backward(const Tensor& prep, const Tensor& real) {
 	// Backward pass through the model
 	lossfunction->backward(prep, real, grad_inputs.back());
-	for (int i = layers.size() - 1; i > 0; --i) {
+	for (int i = layers.size() - 1; i >= 0; --i) {
 		// Backward pass through each layer
 		//std::cout << layers[i]->get_name() << std::endl;
 		layers[i]->backward(grad_inputs[i + 1], inputs[i], grad_inputs[i]);

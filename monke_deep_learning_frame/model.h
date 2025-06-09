@@ -8,12 +8,12 @@
 
 class Model {
 public:
-	Model(Loss& lossfunction, Optimizer& optimizer);
+	Model();
 	
 	~Model();
 	bool compiled = false;
 	void add_layer(Layer* layer);
-	void compile();
+	void compile(std::vector<int> input_shape, Loss& lossfunction, Optimizer& optimizer);
 	void forward(const Tensor& input, Tensor& output);
 	float forward_with_loss(const Tensor& input, Tensor& output, const Tensor& real); // Forward pass with loss calculation
 	void backward(const Tensor& prep, const Tensor& real); // Backward pass through the model

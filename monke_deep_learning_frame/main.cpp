@@ -65,12 +65,15 @@ int main() {
 	input.transfer_to_gpu();
 	
 	cout << "performing forward pass..." << endl;
-	for (int i = 0; i < 100; ++i) {
-		loss_value = M.forward_with_loss(input, output, real);
-		cout << "Loss value: " << loss_value << endl;
-		M.backward(output, real);
-		M.update();
-	}
+
+	loss_value = M.forward_with_loss(input, output, real);
+	cout << "Loss value: " << loss_value << endl;
+
+	M.backward(output, real);
+	M.print_grad_inputs(); // Print gradients for each layer for debugging
+	M.print_grad_parameters(); // Print gradients of model parameters for debugging
+	M.update();
+
 	cout << "Forward pass completed." << endl;
 	cout << "output: " << endl;
 	output.print();
