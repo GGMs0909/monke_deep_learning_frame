@@ -20,6 +20,11 @@ void Model::add_layer(Layer* layer) {
 	layers.push_back(layer);
 }
 void Model::compile() {
+	if (compiled) {
+		std::cout << "Model already compiled." << std::endl;
+		return; // If already compiled, skip compilation
+	}
+	compiled = true; // Mark the model as compiled
 	// Compile the model, prepare inputs and parameters
 	std::cout << "Initializing inputs." << std::endl;
 	inputs = std::vector<Tensor>(layers.size() + 1); // +1 for the output layer
@@ -33,7 +38,7 @@ void Model::compile() {
 	for (int i = 0; i < layers.size(); ++i) {
 		if (!layers[i]) {
 			std::cerr << "Error: layer[" << i << "] is nullptr!" << std::endl;
-			continue; // crash
+			continue;
 		}
 		std::cout << i << " " << layers[i]->get_name() << std::endl;
 		layers[i]->Get_Tensor(inputs[i + 1]);
@@ -124,6 +129,14 @@ void Model::set_parameters(const std::vector<float> data) {
 		}
 		offset += parameters[i]->data.size(); // Update offset for next parameter
 		parameters[i]->transfer_to_gpu(); // Transfer updated parameters to GPU
+	}
+}
+void Model::extract_parameters(std::vector<float>& data) const {
+	// Extract model parameters into a vector
+	data.clear();
+	for (const auto& param : parameters) {
+		param->transfer_to_cpu(); // Ensure parameters are on CPU before extracting data
+		data.insert(data.end(), param->data.begin(), param->data.end()); // Append parameter data to the vector
 	}
 }
 

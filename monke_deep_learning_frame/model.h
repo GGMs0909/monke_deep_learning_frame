@@ -11,6 +11,7 @@ public:
 	Model(Loss& lossfunction, Optimizer& optimizer);
 	
 	~Model();
+	bool compiled = false;
 	void add_layer(Layer* layer);
 	void compile();
 	void forward(const Tensor& input, Tensor& output);
@@ -20,6 +21,7 @@ public:
 	void reset();
 	float get_gradient_norm(); // Calculate the norm of the gradients
 	void set_parameters(const std::vector<float> data);
+	void extract_parameters(std::vector<float>& data) const; // Extract model parameters into a vector
 	//for debugging
 	void print_parameters() const; // Print model parameters for debugging
 	void print_grad_parameters() const; // Print gradients of model parameters for debugging
