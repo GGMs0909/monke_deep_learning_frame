@@ -21,15 +21,20 @@ void Model::add_layer(Layer* layer) {
 }
 void Model::compile() {
 	// Compile the model, prepare inputs and parameters
-
+	std::cout << "Initializing inputs." << std::endl;
 	inputs = std::vector<Tensor>(layers.size() + 1); // +1 for the output layer
 	grad_inputs = std::vector<Tensor>(layers.size() + 1); // +1 for the output layer
 	grad_inputs[0] = Tensor({ 1, 1, 1 }); // Initialize grad_inputs[0] with a dummy shape
+	std::cout << "Initializing parameters." << std::endl;
 	parameters = std::vector<Tensor*>(); // Store model parameters
 	grad_parameters = std::vector<Tensor*>(); // Store gradients of model parameters
 	// Initialize inputs and grad_inputs for each layer
 	std::cout << "Compiling " << layers.size() << " layers." << std::endl;
 	for (int i = 0; i < layers.size(); ++i) {
+		if (!layers[i]) {
+			std::cerr << "Error: layer[" << i << "] is nullptr!" << std::endl;
+			continue; // Á×§K crash
+		}
 		std::cout << i << " " << layers[i]->get_name() << std::endl;
 		layers[i]->Get_Tensor(inputs[i + 1]);
 		layers[i]->Get_Tensor(grad_inputs[i + 1]); // Get the output tensor shape
