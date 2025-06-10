@@ -28,23 +28,27 @@ int main() {
 
 	Model M;
 	// Add layers to the model
-
-	M.add_layer(new Dense(784, 128)); // Dense layer with 128 neurons
+	M.add_layer(new Convolution(1, 28, 3, 3));//1x28x28 -> 3x26x26
+	M.add_layer(new Relu(26 * 26 * 3)); // Activation layer after convolution
+	M.add_layer(new Pooling(3, 26, 2)); // Pooling layer with 2x2 pooling size
+	M.add_layer(new Flatten_3D(3, 13)); // Flatten the pooled output (3x13x13) to a 1D vector
+		
+	M.add_layer(new Dense(3*13*13, 128)); // Dense layer with 128 neurons
 	M.add_layer(new Relu(128)); // Activation layer
 	M.add_layer(new Dense(128, 10)); // Output layer with 10 classes (e.g., MNIST digits)
 	M.add_layer(new Softmax(10)); // Softmax activation for output layer
 
 	// Compile the model with input shape, loss function, and optimizer
-	M.compile({ 784 }, *new CrossEntropyLoss(10), *new Adam(0.1f,0.9,0.99,1e-08));
+	M.compile({ 1,28,28 }, *new CrossEntropyLoss(10), *new Adam(0.1f,0.9,0.99,1e-08));
 
 	cout << "Model compiled successfully." << endl;
 	cout << LOTOFLINE << endl;
-	Tensor input({ 784 }); // Example input tensor
+	Tensor input({ 1,28,28 }); // Example input tensor
 	Tensor output({ 10 }); // Example output tensor
 	Tensor real({ 10 },{1,0,0,0,0,0,0,0,0,0}); // Example real tensor (ground truth)
 
-	for (int i = 0; i < 784; i++) {
-		input.get({ i }) = random_normal_float(0.0f, 1.0f); // Fill input with random values
+	for (float& x : input.data) {
+		x = random_normal_float(0.0f, 1.0f); // Fill input tensor with random values
 	}
 	for (int i = 0; i < 10; i++) {
 		float loss = M.forward_with_loss(input, output, real); // Forward pass with loss calculation
@@ -57,6 +61,10 @@ int main() {
 	M.print_parameters(); // Print model parameters for debugging
 
 	cout << "Model updated successfully." << endl;
+	cout << "predict after training" << endl;
+	output.print(10); // Print the first 10 elements of the output tensor
+	cout << "real" << endl;
+	real.print(10); // Print the first 10 elements of the real tensor (ground truth)
 	cout << LOTOFLINE << endl;
 
 
