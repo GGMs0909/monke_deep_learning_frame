@@ -119,7 +119,7 @@ float Model::get_gradient_norm() {
 	for (int i = 0; i < grad_parameters.size(); ++i) {
 		grad_parameters[i]->transfer_to_cpu(); // Ensure gradients are on CPU for norm calculation
 		for (float& val : grad_parameters[i]->data) {
-			norm += val; // Reset gradients to zero before calculating norm
+			norm += val*val; // Reset gradients to zero before calculating norm
 		}
 
 	}

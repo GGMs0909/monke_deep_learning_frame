@@ -26,62 +26,38 @@ int main() {
 
 	cout << "-----------" << endl;
 
-	Model M(
+	Model M;
+	// Add layers to the model
 
-		*new CrossEntropyLoss(10),
+	M.add_layer(new Dense(784, 128)); // Dense layer with 128 neurons
+	M.add_layer(new Relu(128)); // Activation layer
+	M.add_layer(new Dense(128, 10)); // Output layer with 10 classes (e.g., MNIST digits)
+	M.add_layer(new Softmax(10)); // Softmax activation for output layer
 
-		*new Adam(0.1f, 0.9f, 0.999f, 1e-8f)
+	// Compile the model with input shape, loss function, and optimizer
+	M.compile({ 784 }, *new CrossEntropyLoss(10), *new Adam(0.1f,0.9,0.99,1e-08));
 
-	);
+	cout << "Model compiled successfully." << endl;
+	cout << LOTOFLINE << endl;
+	Tensor input({ 784 }); // Example input tensor
+	Tensor output({ 10 }); // Example output tensor
+	Tensor real({ 10 },{1,0,0,0,0,0,0,0,0,0}); // Example real tensor (ground truth)
 
-	M.add_layer(new Convolution(1, 10, 2, 5)); // 1x10x10 -> 2x6x6
-	M.add_layer(new Relu(2 * 6 * 6)); // 2x6x6 -> 2x6x6
-	M.add_layer(new Pooling(2, 6, 2)); // 2x6x6 -> 2x3x3
-	M.add_layer(new Convolution(2, 3, 4, 3)); // 2x3x3 -> 4x1x1
-	M.add_layer(new Relu(4 * 1 * 1)); // 4x1x1 -> 4x1x1
-	M.add_layer(new Flatten_3D(4, 1)); // 4x1x1 -> 4
-	M.add_layer(new Dense(4, 10)); // 4 -> 10
-	M.add_layer(new Softmax(10)); // 10 -> 10
-	
-
-	cout << "Model layers added." << endl;
-
-	M.compile();
-
-	Tensor input({ 1,10,10 });
-
-	Tensor output({ 10 });
-
-	Tensor real({ 10 },{1,0,0,0,0,0,0,0,0,0});
-
-	float loss_value = 0.0f;
-	for (int i = 0; i < 1;++i) {
-		for (int j = 0; j < 10; ++j) {
-			for (int k = 0; k < 10; ++k) {
-				input.get({ i, j, k }) = random_normal_float(0.0f, 1.0f);
-			}
-		}
+	for (int i = 0; i < 784; i++) {
+		input.get({ i }) = random_normal_float(0.0f, 1.0f); // Fill input with random values
 	}
-	input.transfer_to_gpu();
-	
-	cout << "performing forward pass..." << endl;
+	for (int i = 0; i < 10; i++) {
+		float loss = M.forward_with_loss(input, output, real); // Forward pass with loss calculation
+		cout << "Loss: " << loss << endl; // Print the calculated loss
+		M.backward(output, real); // Backward pass through the model
+		cout << "Gradient Norm: " << M.get_gradient_norm() << endl; // Print the gradient norm
+		M.update(); // Update model parameters using the optimizer
+	}
 
-	loss_value = M.forward_with_loss(input, output, real);
-	cout << "Loss value: " << loss_value << endl;
+	M.print_parameters(); // Print model parameters for debugging
 
-	M.backward(output, real);
-	M.print_grad_inputs(); // Print gradients for each layer for debugging
-	M.print_grad_parameters(); // Print gradients of model parameters for debugging
-	M.update();
-
-	cout << "Forward pass completed." << endl;
-	cout << "output: " << endl;
-	output.print();
-
-
-
-	return 0;
-
+	cout << "Model updated successfully." << endl;
+	cout << LOTOFLINE << endl;
 
 
 }
