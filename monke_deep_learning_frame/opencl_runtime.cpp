@@ -77,6 +77,7 @@ void opencl_runtime::initialize() {
         }
         device = devices_found[0];
         std::cout << "found OpenCL device " << device.getInfo<CL_DEVICE_NAME>() << std::endl;
+		std::cout << "device max compute units: " << device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>() << std::endl;
 
        
         context = cl::Context(device, nullptr, nullptr, nullptr, &err);
