@@ -80,11 +80,11 @@ void Model::forward(const Tensor& input, Tensor& output) {
 }
 float Model::forward_with_loss(const Tensor& input, Tensor& output, const Tensor& real) {
 	// Forward pass with loss calculation
-	std::cout << "Forward pass with loss calculation." << std::endl;
+	//std::cout << "Forward pass with loss calculation." << std::endl;
 	inputs[0] = input; // Set the input for the first layer
 
 	for (size_t i = 0; i < layers.size(); ++i) {
-		std::cout << layers[i]->get_name() << std::endl;
+		//std::cout << layers[i]->get_name() << std::endl;
 		layers[i]->forward(inputs[i], inputs[i + 1]);
 	}
 
