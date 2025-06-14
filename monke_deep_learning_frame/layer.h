@@ -187,6 +187,24 @@ private:
 	int input_size;
 };
 
+class Scale : public Layer {
+public:
+	Scale(int input_size, int scale_size);
+	~Scale() override;
+	std::string get_name() override;
+	void Get_Tensor(Tensor& output) override;
+	void forward(const Tensor& input, Tensor& output) override;
+	void backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) override;
+	void get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) override;
+private:
+	int input_size_;
+	int scale_size_;
+	cl::make_kernel<cl::Buffer, cl::Buffer, int, int> Scale_forward_kernel;
+	cl::make_kernel<cl::Buffer, cl::Buffer, int, int> Scale_backward_kernel;
+	cl::EnqueueArgs enqueue_args_forward;
+	cl::EnqueueArgs enqueue_args_backward;
+};
+
 
 
 

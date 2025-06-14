@@ -302,4 +302,34 @@ void Flatten_3D::get_parameters(std::vector<Tensor*>& parameters, std::vector<Te
 
 }
 
+Scale::Scale(int input_size, int scale_size) : input_size_(input_size), scale_size_(scale_size),
+	Scale_forward_kernel(opencl_runtime::getInstance().get_program(), "scale_forward"),
+	Scale_backward_kernel(opencl_runtime::getInstance().get_program(), "scale_backward"),
+	enqueue_args_forward(opencl_runtime::getInstance().get_queue(), cl::NDRange(input_size_)),
+	enqueue_args_backward(opencl_runtime::getInstance().get_queue(), cl::NDRange(input_size_))
+{
+
+}
+Scale::~Scale() {
+}
+
+std::string Scale::get_name() {
+	return "scale " + std::to_string(input_size_) + " -> " + std::to_string(input_size_);
+}
+
+void Scale::Get_Tensor(Tensor& output) {
+	output = Tensor({ input_size_ });
+}
+void Scale::forward(const Tensor& input, Tensor& output) {
+	opencl_runtime::getInstance().get_queue().finish();
+	Scale_forward_kernel(enqueue_args_forward, input.get_buffer(), output.get_buffer(), input_size_, scale_size_);
+}
+void Scale::backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) {
+	opencl_runtime::getInstance().get_queue().finish();
+	Scale_backward_kernel(enqueue_args_backward, grad_output.get_buffer(), grad_input.get_buffer(), input_size_, scale_size_);
+}
+void Scale::get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) {
+	// No parameters for Scale layer
+}
+
 	

@@ -249,3 +249,16 @@ __kernel void pooling_backward(__global float* grad_output, __global float* grad
 		grad_input[input_index] += grad_output[output_index];
 	}
 }
+
+__kernel void scale_forward(__global float* input, __global float* output, int size, int scale) {
+	int id = get_global_id(0);
+	if (id < size) {
+		output[id] = input[id] / scale;
+	}
+}
+__kernel void scale_backward(__global float* grad_output, __global float* grad_input, int size, int scale) {
+	int id = get_global_id(0);
+	if (id < size) {
+		grad_input[id] = grad_output[id] * scale;
+	}
+}
