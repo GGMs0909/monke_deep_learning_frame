@@ -11,20 +11,22 @@ public:
 	Optimizer() = default;
 	virtual ~Optimizer() = default;
 	// Apply the optimizer to the model's parameters
-	virtual void update(std::vector<Tensor*> parameters, std::vector<Tensor*> grad_parameters) = 0;
+	virtual void update(std::vector<Tensor*> parameters, std::vector<Tensor*> grad_parameters,float learning_rate) = 0;
 	// Reset gradients will done in update
     virtual void initialize_moments(const std::vector<Tensor*>& parameters) {}
     virtual void reset(std::vector<Tensor*> parameters, std::vector<Tensor*> grad_parameters) = 0;
+
 };
 
 class GradientDescent : public Optimizer {
 public:
-	GradientDescent(float learning_rate);
+	GradientDescent();
 	~GradientDescent() override;
-	void update(std::vector<Tensor*> parameters, std::vector<Tensor*> grad_parameters) override;
+	void update(std::vector<Tensor*> parameters, std::vector<Tensor*> grad_parameters, float learning_rate) override;
     void reset(std::vector<Tensor*> parameters, std::vector<Tensor*> grad_parameters) override;
+
 private:
-	float learning_rate; // Learning rate for the optimizer
+	
 	cl::make_kernel<cl::Buffer, cl::Buffer, float, int> kernel; // OpenCL kernel for gradient descent
 	cl::make_kernel < cl::Buffer, int> gradient_reset_kernel; // OpenCL kernel for resetting gradients 
 };
@@ -32,18 +34,18 @@ private:
 class Adam : public Optimizer {
 public:
 
-    Adam(float learning_rate, float beta1, float beta2, float epsilon);
+    Adam(float beta1, float beta2, float epsilon);
     ~Adam() override;
 
 
-    void update(std::vector<Tensor*> parameters, std::vector<Tensor*> grad_parameters) override;
+    void update(std::vector<Tensor*> parameters, std::vector<Tensor*> grad_parameters, float learning_rate) override;
 
 
     void initialize_moments(const std::vector<Tensor*>& parameters) override;
     void reset(std::vector<Tensor*> parameters, std::vector<Tensor*> grad_parameters) override;
 
 private:
-    float learning_rate;
+
     float beta1;
     float beta2;
     float epsilon;

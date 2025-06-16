@@ -2,8 +2,7 @@
 #include "optimizer.h"
 #include <stdexcept>
 
-GradientDescent::GradientDescent(float learning_rate) : 
-    learning_rate(learning_rate), 
+GradientDescent::GradientDescent() : 
     kernel(opencl_runtime::getInstance().get_program(), "gradient_decent"), 
     gradient_reset_kernel(opencl_runtime::getInstance().get_program(), "reset_gradient")  {
 	// Initialize
@@ -11,7 +10,7 @@ GradientDescent::GradientDescent(float learning_rate) :
 GradientDescent::~GradientDescent() {
 	// Clean up resources if needed
 }
-void GradientDescent::update(std::vector<Tensor*> parameters, std::vector<Tensor*> grad_parameters) {
+void GradientDescent::update(std::vector<Tensor*> parameters, std::vector<Tensor*> grad_parameters, float learning_rate) {
 	// Update weights using OpenCL kernel
 	for (int i = 0; i < parameters.size(); ++i) {
 		if (parameters[i]->size() != grad_parameters[i]->size()) {
@@ -35,8 +34,8 @@ void GradientDescent::reset(std::vector<Tensor*> parameters, std::vector<Tensor*
     }
 }
 
-Adam::Adam(float learning_rate, float beta1, float beta2, float epsilon)
-    : learning_rate(learning_rate), beta1(beta1), beta2(beta2), epsilon(epsilon), t(0),
+Adam::Adam(float beta1, float beta2, float epsilon)
+    : beta1(beta1), beta2(beta2), epsilon(epsilon), t(0),
 
     adam_kernel(opencl_runtime::getInstance().get_program(), "adam_update"),
     gradient_reset_kernel(opencl_runtime::getInstance().get_program(), "reset_gradient") {
@@ -76,7 +75,7 @@ void Adam::initialize_moments(const std::vector<Tensor*>& parameters) {
     opencl_runtime::getInstance().get_queue().finish(); 
     std::cout << "Adam moments initialized for " << parameters.size() << " parameters." << std::endl;
 }
-void Adam::update(std::vector<Tensor*> parameters, std::vector<Tensor*> grad_parameters) {
+void Adam::update(std::vector<Tensor*> parameters, std::vector<Tensor*> grad_parameters, float learning_rate) {
     if (m.empty() || v.empty() || m.size() != parameters.size()) {
         throw std::runtime_error("Adam moments (m, v) not initialized. Call initialize_moments() first.");
     }
