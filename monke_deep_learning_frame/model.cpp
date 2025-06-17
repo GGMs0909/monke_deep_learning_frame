@@ -155,6 +155,15 @@ void Model::extract_parameters(std::vector<float>& data) const {
 	}
 }
 
+std::vector<Tensor*> Model::get_parameters() {
+	// Get model parameters (for the Normalization)
+	return parameters;
+}
+std::vector<Tensor*> Model::get_grad_parameters() {
+	// Get gradients of model parameters (for the Normalization)
+	return grad_parameters;
+}
+
 
 //for debugging purposes
 void Model::print_parameters() const {

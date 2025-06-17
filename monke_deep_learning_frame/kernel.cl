@@ -84,7 +84,12 @@ __kernel void softmax_backward(__global float* grad_output, __global float* outp
 		grad_input[id] = output[id] * (grad_output[id] - sum);
 	}
 }
-
+__kernel void normalization_backward(__global float* grad_parameters, __global float* parameters, int size, float normalization_factor) {
+	int id = get_global_id(0);
+	if (id < size) {
+		grad_parameters[id] = parameters[id]* normalization_factor;
+	}
+}
 
 //specific
 __kernel void dense_forward(__global float* input, __global float* output, __global float* weights, __global float* biases, int input_size, int output_size) {
@@ -262,3 +267,5 @@ __kernel void scale_backward(__global float* grad_output, __global float* grad_i
 		grad_input[id] = grad_output[id] * scale;
 	}
 }
+
+

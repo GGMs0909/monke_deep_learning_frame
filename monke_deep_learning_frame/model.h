@@ -22,6 +22,8 @@ public:
 	float get_gradient_norm(); // Calculate the norm of the gradients
 	void set_parameters(const std::vector<float> data);
 	void extract_parameters(std::vector<float>& data) const; // Extract model parameters into a vector
+	std::vector<Tensor*> get_parameters(); // Get model parameters (for the Normalization)
+	std::vector<Tensor*> get_grad_parameters(); // Get gradients of model parameters (for the Normalization)
 	//for debugging
 	void print_parameters() const; // Print model parameters for debugging
 	void print_grad_parameters() const; // Print gradients of model parameters for debugging

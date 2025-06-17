@@ -2,6 +2,7 @@
 #include "loss.h"
 #include <cmath>
 #include <stdexcept>
+#include "model.h"
 
 Loss::Loss() {
 	// Constructor implementation
@@ -9,6 +10,51 @@ Loss::Loss() {
 Loss::~Loss() {
 	// Destructor implementation
 }
+LossWithNormalization::LossWithNormalization(Model* model, Loss* loss_function, float normalization_factor)
+	: model_(model), loss_function_(loss_function), normalization_factor_(normalization_factor), 
+	normalization_backward_kernel(opencl_runtime::getInstance().get_program(), "normalization_backward")
+{
+	// Constructor implementation
+	if (!model_) {
+		throw std::invalid_argument("Model pointer cannot be null.");
+	}
+	if (!loss_function_) {
+		throw std::invalid_argument("Loss function pointer cannot be null.");
+	}
+	// Initialize parameters and gradients for normalization
+	parameters = model_->get_parameters(); // Get model parameters for normalization
+	grad_parameters = model_->get_grad_parameters(); // Get gradients of model parameters for normalization
+}
+LossWithNormalization::~LossWithNormalization() {
+	// Destructor implementation
+}
+float LossWithNormalization::calculate(const Tensor& pred, const Tensor& real) {
+	float loss = loss_function_->calculate(pred, real);
+	
+	return loss;
+}
+void LossWithNormalization::backward(const Tensor& pred, const Tensor& real, Tensor& grad_output) {
+	if (pred.size() != real.size() || pred.size() != grad_output.size()) {
+		throw std::invalid_argument("Predicted, real, and gradient output tensors must have the same size.");
+	}
+	loss_function_->backward(pred, real, grad_output);
+
+	// Normalize gradients
+	opencl_runtime::getInstance().get_queue().finish();
+	for (int i = 0; i < parameters.size(); ++i) {
+		if (parameters[i]->size() != grad_parameters[i]->size()) {
+			throw std::invalid_argument("Parameter and gradient sizes do not match.");
+		}
+		normalization_backward_kernel(cl::EnqueueArgs(opencl_runtime::getInstance().get_queue(), cl::NDRange(grad_parameters[i]->size())),
+			grad_parameters[i]->get_buffer(), parameters[i]->get_buffer(), grad_parameters[i]->size(), normalization_factor_);
+	}
+
+	grad_output.transfer_to_gpu();
+}
+std::string LossWithNormalization::get_name() const {
+	return "LossWithNormalization(" + loss_function_->get_name() + ")";
+}
+
 
 MeanSquaredError::MeanSquaredError(int input_size) : input_size(input_size) {
 	// Constructor implementation
