@@ -106,9 +106,9 @@ void Model::backward(const Tensor& prep, const Tensor& real) {
 	}
 	opencl_runtime::getInstance().get_queue().finish();
 }
-void Model::update() {
+void Model::update(float learning_rate) {
 	
-	optimizer->update(parameters, grad_parameters);
+	optimizer->update(parameters, grad_parameters, learning_rate);
 	opencl_runtime::getInstance().get_queue().finish();
 	// Reset gradients in update
 }
