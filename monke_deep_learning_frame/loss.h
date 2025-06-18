@@ -29,8 +29,6 @@ private:
 	float normalization_factor_;
 	Model* model_; // Pointer to the model for normalization factor calculation
 	Loss* loss_function_; // Pointer to the actual loss function used for calculation
-	std::vector<Tensor*> parameters; // Store model parameters for normalization
-	std::vector<Tensor*> grad_parameters; // Store gradients of model parameters for normalization
 	cl::make_kernel < cl::Buffer, cl::Buffer, int, float > normalization_backward_kernel; // OpenCL kernel for normalization
 };
 

@@ -21,9 +21,7 @@ LossWithNormalization::LossWithNormalization(Model* model, Loss* loss_function, 
 	if (!loss_function_) {
 		throw std::invalid_argument("Loss function pointer cannot be null.");
 	}
-	// Initialize parameters and gradients for normalization
-	parameters = model_->get_parameters(); // Get model parameters for normalization
-	grad_parameters = model_->get_grad_parameters(); // Get gradients of model parameters for normalization
+
 }
 LossWithNormalization::~LossWithNormalization() {
 	// Destructor implementation
@@ -38,7 +36,8 @@ void LossWithNormalization::backward(const Tensor& pred, const Tensor& real, Ten
 		throw std::invalid_argument("Predicted, real, and gradient output tensors must have the same size.");
 	}
 	loss_function_->backward(pred, real, grad_output);
-
+	std::vector<Tensor*> parameters = model_->get_parameters();
+	std::vector<Tensor*> grad_parameters = model_->get_grad_parameters();
 	// Normalize gradients
 	opencl_runtime::getInstance().get_queue().finish();
 	for (int i = 0; i < parameters.size(); ++i) {
