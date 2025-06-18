@@ -47,16 +47,17 @@ __kernel void adam_update(
     }
 }
 __kernel void relu_forward(__global float* input, __global float* output, int size) {
-	int id = get_global_id(0);
-	if (id < size) {
-		output[id] = max(0.0f, input[id]);
-	}
+    int id = get_global_id(0);
+    if (id < size) {
+        float x = input[id];
+        output[id] = (x > 0.0f) ? x : 0.01f * x;
+    }
 }
 __kernel void relu_backward(__global float* grad_output, __global float* input, __global float* grad_input, int size) {
-	int id = get_global_id(0);
-	if (id < size) {
-		grad_input[id] = (input[id] > 0.0f) ? grad_output[id] : 0.0f;
-	}
+    int id = get_global_id(0);
+    if (id < size) {
+        grad_input[id] = (input[id] > 0.0f) ? grad_output[id] : 0.01f * grad_output[id];
+    }
 }
 __kernel void softmax_forward(__global float* input, __global float* output, int size) {
 	int id = get_global_id(0);
