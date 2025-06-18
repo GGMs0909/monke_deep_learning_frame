@@ -10,17 +10,24 @@ Loss::Loss() {
 Loss::~Loss() {
 	// Destructor implementation
 }
-LossWithNormalization::LossWithNormalization(Model* model, Loss* loss_function, float normalization_factor)
-	: model_(model), loss_function_(loss_function), normalization_factor_(normalization_factor), 
+LossWithNormalization::LossWithNormalization(Model& model, Loss& loss_function, float normalization_factor)
+	:  normalization_factor_(normalization_factor), 
 	normalization_backward_kernel(opencl_runtime::getInstance().get_program(), "normalization_backward")
 {
+	model_ = &model; // Store the model pointer for normalization factor calculation
+	loss_function_ = &loss_function; // Store the actual loss function pointer for calculation
 	// Constructor implementation
+	if (normalization_factor_ <= 0) {
+		throw std::invalid_argument("Normalization factor must be greater than zero.");
+	}
 	if (!model_) {
 		throw std::invalid_argument("Model pointer cannot be null.");
 	}
 	if (!loss_function_) {
 		throw std::invalid_argument("Loss function pointer cannot be null.");
 	}
+	
+	
 
 }
 LossWithNormalization::~LossWithNormalization() {

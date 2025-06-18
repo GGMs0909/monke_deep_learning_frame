@@ -19,7 +19,7 @@ public:
 };
 class LossWithNormalization : public Loss {
 public:
-	LossWithNormalization(Model* model, Loss* loss_function, float normalization_factor);
+	LossWithNormalization(Model& model, Loss& loss_function, float normalization_factor);
 	~LossWithNormalization() override;
 	float calculate(const Tensor& pred, const Tensor& real) override;
 	void backward(const Tensor& pred, const Tensor& real, Tensor& grad_output) override;
@@ -27,8 +27,8 @@ public:
 private:
 
 	float normalization_factor_;
-	Model* model_; // Pointer to the model for normalization factor calculation
-	Loss* loss_function_; // Pointer to the actual loss function used for calculation
+	Model* model_; 
+	Loss* loss_function_; 
 	cl::make_kernel < cl::Buffer, cl::Buffer, int, float > normalization_backward_kernel; // OpenCL kernel for normalization
 };
 

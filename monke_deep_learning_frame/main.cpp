@@ -39,7 +39,7 @@ int main() {
 	M.add_layer(new Softmax(10)); // Softmax activation for output layer
 
 	// Compile the model with input shape, loss function, and optimizer
-	M.compile({ 1,28,28 }, *new CrossEntropyLoss(10), *new Adam(0.1f,0.9,0.99,1e-08));
+	M.compile({ 1,28,28 }, *new LossWithNormalization(&M, new CrossEntropyLoss(10), 1e-3), *new Adam(0.9, 0.99, 1e-08));
 
 	cout << "Model compiled successfully." << endl;
 	cout << LOTOFLINE << endl;
