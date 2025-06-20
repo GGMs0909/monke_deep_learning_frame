@@ -1,7 +1,7 @@
 //kernel.cl
 //universal 
 __kernel void gradient_clipping(__global float* grad, int size){
-	int id = get_global_id(0)
+	int id = get_global_id(0);
 	if(id < size){
 		if(grad[id] > 10) grad[id] = 10;
 		if(grad[id] < -10) grad[id] = -10;
