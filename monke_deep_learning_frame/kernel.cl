@@ -4,9 +4,9 @@
 __kernel void gradient_decent(__global float* V, __global float* grad_V, float learning_rate, int size) {
 	int id = get_global_id(0);
 	if (id < size) {
-		float g = grad_V[id]
+		float g = grad_V[id];
 		if(g > 10) g = 10;
-		if(g < -10) g = -10
+		if(g < -10) g = -10;
 		V[id] -= learning_rate * grad_V[id];
 
 	}
@@ -33,7 +33,7 @@ __kernel void adam_update(
     if (gid < size) {
         float g = grad[gid]; // Current gradient
 	if(g > 10) g = 10;
-	if(g < -10) g = -10
+	if(g < -10) g = -10;
 
         // Update biased first moment estimate
         m[gid] = beta1 * m[gid] + (1.0f - beta1) * g;
