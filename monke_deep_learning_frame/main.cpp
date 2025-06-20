@@ -34,6 +34,7 @@ int main() {
 	M.add_layer(new Flatten_3D(3, 13)); // Flatten the pooled output (3x13x13) to a 1D vector
 		
 	M.add_layer(new Dense(3*13*13, 128)); // Dense layer with 128 neurons
+	M.add_layer(new Dropout(0.5, 128)); // Dropout layer with 50% dropout rate
 	M.add_layer(new Relu(128)); // Activation layer
 	M.add_layer(new Dense(128, 10)); // Output layer with 10 classes (e.g., MNIST digits)
 	M.add_layer(new Softmax(10)); // Softmax activation for output layer

@@ -104,7 +104,7 @@ __kernel void normalization_backward(__global float* grad_parameters, __global f
 }
 
 //specific
-__kernel void dropout_forward(__global float* input, __global float* output__global float* mask, int size, float dropout_rate, int seed) {
+__kernel void dropout_forward(__global float* input, __global float* output, __global float* mask, int size, float dropout_rate, int seed) {
 	int id = get_global_id(0);
 	if(id < size){
 		uint state = id * 1234567 + seed;
