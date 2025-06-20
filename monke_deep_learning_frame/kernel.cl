@@ -99,7 +99,7 @@ __kernel void softmax_backward(__global float* grad_output, __global float* outp
 __kernel void normalization_backward(__global float* grad_parameters, __global float* parameters, int size, float normalization_factor) {
 	int id = get_global_id(0);
 	if (id < size) {
-		grad_parameters[id] = parameters[id]* normalization_factor;
+		grad_parameters[id] += parameters[id]* normalization_factor;
 	}
 }
 
