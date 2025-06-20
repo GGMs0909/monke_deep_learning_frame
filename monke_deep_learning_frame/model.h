@@ -17,7 +17,7 @@ public:
 	void forward(const Tensor& input, Tensor& output);
 	float forward_with_loss(const Tensor& input, Tensor& output, const Tensor& real); // Forward pass with loss calculation
 	void backward(const Tensor& prep, const Tensor& real); // Backward pass through the model
-	void gradient_clipping()
+	void gradient_clipping();
 	void update(float learning_rate); // Update model parameters using the optimizer
 	void reset();
 	float get_gradient_norm(); // Calculate the norm of the gradients
