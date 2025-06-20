@@ -99,11 +99,46 @@ __kernel void softmax_backward(__global float* grad_output, __global float* outp
 __kernel void normalization_backward(__global float* grad_parameters, __global float* parameters, int size, float normalization_factor) {
 	int id = get_global_id(0);
 	if (id < size) {
-		grad_parameters[id] = parameters[id]* normalization_factor;
+		grad_parameters[id] += parameters[id]* normalization_factor;
 	}
 }
 
 //specific
+__kernel void dropout_forward(__global float* input, __global float* output__global float* mask, int size, float dropout_rate, int seed) {
+	int id = get_global_id(0);
+	if(id < size){
+		uint state = id * 1234567 + seed;
+		state = (state * 1664525 + 1013904223);// Linear congruential generator for pseudo-random number generation
+		float random_value = (float)(state & 0xFFFFFF) / (float)0x1000000;// Normalize to [0, 1)
+		
+		if(random_value < dropout_rate) {
+			mask[id] = 0.0f; // Drop this neuron
+			output[id] = 0.0f;
+		} else {
+			mask[id] = 1.0f; // Keep this neuron
+			output[id] = input[id]; // Pass through the input
+		}
+	}
+}
+__kernel void dropout_backward(__global float* grad_output, __global float* grad_input, __global float* mask, int size){
+	int id = get_global_id(0);
+	if(id < size){
+		grad_input[id] = grad_output[id] * mask[id]; // Scale the gradient by the mask
+	}
+}
+
+__kernel void scale_forward(__global float* input, __global float* output, int size, int scale) {
+	int id = get_global_id(0);
+	if (id < size) {
+		output[id] = input[id] / scale;
+	}
+}
+__kernel void scale_backward(__global float* grad_output, __global float* grad_input, int size, int scale) {
+	int id = get_global_id(0);
+	if (id < size) {
+		grad_input[id] = grad_output[id] * scale;
+	}
+}
 __kernel void dense_forward(__global float* input, __global float* output, __global float* weights, __global float* biases, int input_size, int output_size) {
 	int id = get_global_id(0);
 	if (id < output_size) {
@@ -267,17 +302,6 @@ __kernel void pooling_backward(__global float* grad_output, __global float* grad
 	}
 }
 
-__kernel void scale_forward(__global float* input, __global float* output, int size, int scale) {
-	int id = get_global_id(0);
-	if (id < size) {
-		output[id] = input[id] / scale;
-	}
-}
-__kernel void scale_backward(__global float* grad_output, __global float* grad_input, int size, int scale) {
-	int id = get_global_id(0);
-	if (id < size) {
-		grad_input[id] = grad_output[id] * scale;
-	}
-}
+
 
 

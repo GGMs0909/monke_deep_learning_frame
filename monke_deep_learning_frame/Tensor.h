@@ -21,10 +21,13 @@ public:
 
     Tensor(const std::vector<int>& shape, const std::vector<float>& data);
 
+    Tensor(const Tensor& other);
+
     ~Tensor();
 
     size_t size() const;
 
+    void copy_from(const Tensor& other);
 
 	const std::vector<int>& get_shape() const;
 

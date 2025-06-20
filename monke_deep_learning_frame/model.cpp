@@ -70,6 +70,10 @@ void Model::compile(std::vector<int> input_shape, Loss& lossfunction, Optimizer&
 }
 
 void Model::forward(const Tensor& input, Tensor& output) {
+	// disable training mode for all layers
+	for (Layer* layer : layers) {
+		layer->set_training(false); // Set all layers to inference mode
+	}
 	// Forward pass through the model
 	inputs[0] = input; // Set the input for the first layer
 	for (size_t i = 0; i < layers.size(); ++i) {
@@ -80,6 +84,10 @@ void Model::forward(const Tensor& input, Tensor& output) {
 	opencl_runtime::getInstance().get_queue().finish();
 }
 float Model::forward_with_loss(const Tensor& input, Tensor& output, const Tensor& real) {
+	// enable training mode for all layers
+	for (Layer* layer : layers) {
+		layer->set_training(true); // Set all layers to training mode
+	}
 	// Forward pass with loss calculation
 	//std::cout << "Forward pass with loss calculation." << std::endl;
 	inputs[0] = input; // Set the input for the first layer

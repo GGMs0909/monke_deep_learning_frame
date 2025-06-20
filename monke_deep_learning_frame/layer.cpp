@@ -8,12 +8,61 @@ static float random_normal_float(float mean, float stddev) {
 	std::normal_distribution<float> dist(mean, stddev);
 	return dist(gen);
 }
+static int generate_seed() {
+	static std::random_device rd;
+	return rd(); 
+}
 
 Layer::Layer() {
 	// Constructor implementation
 }
 Layer::~Layer() {
 	// Destructor implementation
+}
+void Layer::set_training(bool is_training) {
+	is_training_ = is_training;
+}
+
+Dropout::Dropout(float dropout_rate, int input_size) 
+	: input_size_(input_size),
+	dropout_rate_(dropout_rate),
+	Dropout_forward_kernel(opencl_runtime::getInstance().get_program(), "dropout_forward"),
+	Dropout_backward_kernel(opencl_runtime::getInstance().get_program(), "dropout_backward")
+{
+	mask = Tensor({ input_size_ });
+}
+Dropout::~Dropout() {
+	// Destructor implementation
+}
+std::string Dropout::get_name() {
+	return "dropout " + std::to_string(input_size_) + " with rate " + std::to_string(dropout_rate_);
+}
+void Dropout::Get_Tensor(Tensor& output) {
+	output = Tensor({ input_size_ });
+}
+void Dropout::forward(const Tensor& input, Tensor& output) {
+	if (!is_training_) {
+		// If not in training mode, just copy input to output
+		output.copy_from(input);
+		return;
+	}
+	int seed = generate_seed(); // Generate a random seed for dropout mask
+	opencl_runtime::getInstance().get_queue().finish();
+	cl::EnqueueArgs args(opencl_runtime::getInstance().get_queue(), cl::NDRange(input_size_));
+	Dropout_forward_kernel(args, input.get_buffer(), output.get_buffer(), mask.get_buffer(), input_size_, dropout_rate_, seed);
+}
+void Dropout::backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) {
+	if (!is_training_) {
+		// If not in training mode, just copy grad_output to grad_input
+		grad_input.copy_from(grad_output);
+		return;
+	}
+	opencl_runtime::getInstance().get_queue().finish();
+	cl::EnqueueArgs args(opencl_runtime::getInstance().get_queue(), cl::NDRange(input_size_));
+	Dropout_backward_kernel(args, grad_output.get_buffer(), grad_input.get_buffer(), mask.get_buffer(), input_size_);
+}
+void Dropout::get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) {
+	// Dropout does not have parameters to update
 }
 
 Relu::Relu(int input_size)

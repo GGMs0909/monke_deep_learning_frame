@@ -56,10 +56,46 @@ Tensor::Tensor(const std::vector<int>& shape, const std::vector<float>& data) : 
 	transfer_to_gpu();
 }
 
+Tensor::Tensor(const Tensor& other) {
+    shape = other.shape;
+    strides = other.strides;
+    data = other.data;  // vector 深拷貝
+
+    sizebyte = other.sizebyte;
+
+    // 建立新的 cl::Buffer 並複製 GPU 資料 (OpenCL 需要明確操作)
+    cl_buffer = cl::Buffer(opencl_runtime::getInstance().get_context(), CL_MEM_READ_WRITE, sizebyte);
+
+    // 用 OpenCL 命令複製 GPU buffer 內容
+    opencl_runtime::getInstance().get_queue().enqueueCopyBuffer(other.cl_buffer, cl_buffer, 0, 0, sizebyte);
+}
+
 Tensor::~Tensor() {
 	//std::cout << "Tensor destructor called." << std::endl;
 }
+void Tensor::copy_from(const Tensor& other) {
+    if (this == &other) return;  // 避免自己拷貝自己
 
+ 
+    if (this->size() != other.size()) {
+        throw std::runtime_error("Tensor::copy_from - Tensor size mismatch");
+    }
+
+
+    this->data = other.data;
+
+
+	if (cl_buffer() && other.cl_buffer()) {
+		opencl_runtime::getInstance().get_queue().enqueueCopyBuffer(other.cl_buffer, cl_buffer, 0, 0, sizebyte);
+	}
+	else if (!cl_buffer() && other.cl_buffer()) {
+		cl_buffer = cl::Buffer(opencl_runtime::getInstance().get_context(), CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizebyte, data.data());
+	}
+	else if (cl_buffer() && !other.cl_buffer()) {
+
+	}
+    
+}
 
 size_t Tensor::size() const {
     return data.size();

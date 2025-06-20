@@ -22,11 +22,48 @@ public:
 	virtual void forward(const Tensor& input, Tensor& output) = 0;
 	virtual void backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) = 0;
 	virtual void get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) = 0;
+	virtual void set_training(bool is_training);
 
+protected:
+	bool is_training_ = true;
 
+};
 
+class Dropout : public Layer {
+public:
+	Dropout(float dropout_rate, int input_size);
+	~Dropout() override;
+	std::string get_name() override;
+	void Get_Tensor(Tensor& output) override;
+	void forward(const Tensor& input, Tensor& output) override;
+	void backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) override;
+	void get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) override;
 private:
+	float  dropout_rate_;
+	int input_size_;
+	Tensor mask; // Mask to store the dropout mask
+	//__kernel void dropout_forward(__global float* input, __global float* output__global float* mask, int size, float dropout_rate, int seed)
+	cl::make_kernel < cl::Buffer, cl::Buffer, cl::Buffer, int, float, int> Dropout_forward_kernel;
+	//__kernel void dropout_backward(__global float* grad_output, __global float* grad_input, __global float* mask, int size)
+	cl::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer, int> Dropout_backward_kernel;
+};
 
+class Scale : public Layer {
+public:
+	Scale(int input_size, int scale_size);
+	~Scale() override;
+	std::string get_name() override;
+	void Get_Tensor(Tensor& output) override;
+	void forward(const Tensor& input, Tensor& output) override;
+	void backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) override;
+	void get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) override;
+private:
+	int input_size_;
+	int scale_size_;
+	cl::make_kernel<cl::Buffer, cl::Buffer, int, int> Scale_forward_kernel;
+	cl::make_kernel<cl::Buffer, cl::Buffer, int, int> Scale_backward_kernel;
+	cl::EnqueueArgs enqueue_args_forward;
+	cl::EnqueueArgs enqueue_args_backward;
 };
 
 class Relu : public Layer { // deleted Relu_1D and Relu_3D, now using Relu
@@ -58,6 +95,7 @@ public:
 	void forward(const Tensor& input, Tensor& output) override;
 	void backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) override;
 	void get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) override;
+
 
 
 private:
@@ -187,23 +225,7 @@ private:
 	int input_size;
 };
 
-class Scale : public Layer {
-public:
-	Scale(int input_size, int scale_size);
-	~Scale() override;
-	std::string get_name() override;
-	void Get_Tensor(Tensor& output) override;
-	void forward(const Tensor& input, Tensor& output) override;
-	void backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) override;
-	void get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) override;
-private:
-	int input_size_;
-	int scale_size_;
-	cl::make_kernel<cl::Buffer, cl::Buffer, int, int> Scale_forward_kernel;
-	cl::make_kernel<cl::Buffer, cl::Buffer, int, int> Scale_backward_kernel;
-	cl::EnqueueArgs enqueue_args_forward;
-	cl::EnqueueArgs enqueue_args_backward;
-};
+
 
 
 
