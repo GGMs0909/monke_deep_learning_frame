@@ -1,6 +1,12 @@
 //kernel.cl
 //universal 
-
+__kernel void gradient_clipping(__global float* grad, int size){
+	int id = get_global_id(0)
+	if(id < size){
+		if(grad[id] > 10) grad[id] = 10
+		if(grad[id] < -10) grad[id] = -10
+	}
+}
 __kernel void gradient_decent(__global float* V, __global float* grad_V, float learning_rate, int size) {
 	int id = get_global_id(0);
 	if (id < size) {
