@@ -17,6 +17,7 @@ public:
 	void forward(const Tensor& input, Tensor& output);
 	float forward_with_loss(const Tensor& input, Tensor& output, const Tensor& real); // Forward pass with loss calculation
 	void backward(const Tensor& prep, const Tensor& real); // Backward pass through the model
+	void gradient_clipping()
 	void update(float learning_rate); // Update model parameters using the optimizer
 	void reset();
 	float get_gradient_norm(); // Calculate the norm of the gradients
@@ -38,5 +39,6 @@ private:
 	std::vector<Tensor*> grad_parameters; // Store gradients of model parameters
 	Optimizer* optimizer; // Pointer to the optimizer
 	cl::make_kernel<cl::Buffer, cl::Buffer, int> gradient_norm_kernel; // OpenCL kernel for calculating gradient norm
+	cl::make_kernel<cl::Buffer, int> gradient_clipping_kernel;
 };
 
