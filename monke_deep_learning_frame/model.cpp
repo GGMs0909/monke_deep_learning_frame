@@ -109,7 +109,8 @@ void Model::backward(const Tensor& prep, const Tensor& real) {
 }
 void Model::gradient_clipping(){
 	for(int i = 0; i < grad_parameters.size(); i++){
-		gradient_clipping_kernel()
+		gradient_clipping_kernel(cl::EnqueueArgs(opencl_runtime::getInstance().get_queue(), cl::NDRange(grad_parameters[i]->size())),
+			grad_parameters[i]->get_buffer(), grad_parameters[i]->size());
 	}	
 }
 
