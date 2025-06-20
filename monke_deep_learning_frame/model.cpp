@@ -1,7 +1,8 @@
 #include "model.h"
 
 Model::Model() :
-	gradient_norm_kernel(opencl_runtime::getInstance().get_program(), "calculate_gradient_norm")
+	gradient_norm_kernel(opencl_runtime::getInstance().get_program(), "calculate_gradient_norm"),
+	gradient_clipping_kernel(opencl_runtime::getInstance().get_program(),"gradient_clipping")
 {
 	// Initialize the model
 
@@ -106,6 +107,12 @@ void Model::backward(const Tensor& prep, const Tensor& real) {
 	}
 	opencl_runtime::getInstance().get_queue().finish();
 }
+void Model::gradient_clipping(){
+	for(int i = 0; i < grad_parameters.size(); i++){
+		gradient_clipping_kernel()
+	}	
+}
+
 void Model::update(float learning_rate) {
 	
 	optimizer->update(parameters, grad_parameters, learning_rate);
