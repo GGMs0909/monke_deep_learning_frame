@@ -26,6 +26,7 @@ void Layer::set_training(bool is_training) {
 Dropout::Dropout(float dropout_rate, int input_size) 
 	: input_size_(input_size),
 	dropout_rate_(dropout_rate),
+	scale_kernel(opencl_runtime::getInstance().get_program(), "scale_forward"),
 	Dropout_forward_kernel(opencl_runtime::getInstance().get_program(), "dropout_forward"),
 	Dropout_backward_kernel(opencl_runtime::getInstance().get_program(), "dropout_backward")
 {
@@ -43,7 +44,8 @@ void Dropout::Get_Tensor(Tensor& output) {
 void Dropout::forward(const Tensor& input, Tensor& output) {
 	if (!is_training_) {
 		// If not in training mode, just copy input to output
-		output.copy_from(input);
+		cl::EnqueueArgs args(opencl_runtime::getInstance().get_queue(), cl::NDRange(input_size_));
+		scale_kernel(args, input.get_buffer(), output.get_buffer(), input_size_, 1.0f - dropout_rate_);
 		return;
 	}
 	int seed = generate_seed(); // Generate a random seed for dropout mask
@@ -59,7 +61,7 @@ void Dropout::backward(const Tensor& grad_output, const Tensor& input, Tensor& g
 	}
 	opencl_runtime::getInstance().get_queue().finish();
 	cl::EnqueueArgs args(opencl_runtime::getInstance().get_queue(), cl::NDRange(input_size_));
-	Dropout_backward_kernel(args, grad_output.get_buffer(), grad_input.get_buffer(), mask.get_buffer(), input_size_);
+	Dropout_backward_kernel(args, grad_output.get_buffer(), grad_input.get_buffer(), mask.get_buffer(), input_size_, dropout_rate_);
 }
 void Dropout::get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) {
 	// Dropout does not have parameters to update
@@ -351,11 +353,9 @@ void Flatten_3D::get_parameters(std::vector<Tensor*>& parameters, std::vector<Te
 
 }
 
-Scale::Scale(int input_size, int scale_size) : input_size_(input_size), scale_size_(scale_size),
+Scale::Scale(int input_size, float scale_size) : input_size_(input_size), scale_size_(scale_size),
 	Scale_forward_kernel(opencl_runtime::getInstance().get_program(), "scale_forward"),
-	Scale_backward_kernel(opencl_runtime::getInstance().get_program(), "scale_backward"),
-	enqueue_args_forward(opencl_runtime::getInstance().get_queue(), cl::NDRange(input_size_)),
-	enqueue_args_backward(opencl_runtime::getInstance().get_queue(), cl::NDRange(input_size_))
+	Scale_backward_kernel(opencl_runtime::getInstance().get_program(), "scale_backward")
 {
 
 }
@@ -371,11 +371,13 @@ void Scale::Get_Tensor(Tensor& output) {
 }
 void Scale::forward(const Tensor& input, Tensor& output) {
 	opencl_runtime::getInstance().get_queue().finish();
-	Scale_forward_kernel(enqueue_args_forward, input.get_buffer(), output.get_buffer(), input_size_, scale_size_);
+	cl::EnqueueArgs arg(opencl_runtime::getInstance().get_queue(), cl::NDRange(input_size_));
+	Scale_forward_kernel(arg, input.get_buffer(), output.get_buffer(), input_size_, scale_size_);
 }
 void Scale::backward(const Tensor& grad_output, const Tensor& input, Tensor& grad_input) {
 	opencl_runtime::getInstance().get_queue().finish();
-	Scale_backward_kernel(enqueue_args_backward, grad_output.get_buffer(), grad_input.get_buffer(), input_size_, scale_size_);
+	cl::EnqueueArgs arg(opencl_runtime::getInstance().get_queue(), cl::NDRange(input_size_));
+	Scale_backward_kernel(arg, grad_output.get_buffer(), grad_input.get_buffer(), input_size_, scale_size_);
 }
 void Scale::get_parameters(std::vector<Tensor*>& parameters, std::vector<Tensor*>& grad_parameters) {
 	// No parameters for Scale layer

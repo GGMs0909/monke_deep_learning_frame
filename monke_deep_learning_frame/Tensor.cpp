@@ -241,3 +241,4 @@ inline size_t Tensor::get_linear_index(const std::vector<int>& index) const {
     }
     return linear_index;
 }
+

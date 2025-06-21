@@ -116,24 +116,24 @@ __kernel void dropout_forward(__global float* input, __global float* output, __g
 			output[id] = 0.0f;
 		} else {
 			mask[id] = 1.0f; // Keep this neuron
-			output[id] = input[id]; // Pass through the input
+			output[id] = input[id] / 1-dropout_rate; // Pass through the input
 		}
 	}
 }
-__kernel void dropout_backward(__global float* grad_output, __global float* grad_input, __global float* mask, int size){
+__kernel void dropout_backward(__global float* grad_output, __global float* grad_input, __global float* mask, int size, float dropout_rate){
 	int id = get_global_id(0);
 	if(id < size){
-		grad_input[id] = grad_output[id] * mask[id]; // Scale the gradient by the mask
+		grad_input[id] = grad_output[id] * mask[id]*(1-dropout_rate); // Scale the gradient by the mask
 	}
 }
 
-__kernel void scale_forward(__global float* input, __global float* output, int size, int scale) {
+__kernel void scale_forward(__global float* input, __global float* output, int size, float scale) {
 	int id = get_global_id(0);
 	if (id < size) {
 		output[id] = input[id] / scale;
 	}
 }
-__kernel void scale_backward(__global float* grad_output, __global float* grad_input, int size, int scale) {
+__kernel void scale_backward(__global float* grad_output, __global float* grad_input, int size, float scale) {
 	int id = get_global_id(0);
 	if (id < size) {
 		grad_input[id] = grad_output[id] * scale;

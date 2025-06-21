@@ -7,6 +7,8 @@
 #include "opencl_runtime.h"
 
 
+
+
 class Tensor {
 public:
     std::vector<int> shape;
@@ -63,5 +65,7 @@ private:
 
     size_t get_linear_index(const std::vector<int>& index) const;
 };
+
+
 
 #endif // TENSOR_H
