@@ -1,4 +1,5 @@
 #include "layer.hpp"
+#include <ctime>
 #include <random>
 
 
@@ -79,6 +80,77 @@ void Scale::get_tensor(std::vector<Tensor*>& inputs, size_t batch_size) {
 }
 std::string Scale::get_name() const {
     return "Scale " + std::to_string(size) + " with factor " + std::to_string(scale_factor);
+}
+
+//dropout
+
+Dropout::Dropout(size_t size_, float p_) : 
+    size(size_),
+    p(p_),
+    forward_kernel(opencl_runtime::getInstance().get_program(), "dropout_forward"),
+    backward_kernel(opencl_runtime::getInstance().get_program(), "dropout_backward")
+{
+
+}
+
+void Dropout::predict(const Tensor& inputs, Tensor& outputs){
+    
+    opencl_runtime::getInstance().get_queue().enqueueCopyBuffer(
+        inputs.getBuffer(), 
+        outputs.getBuffer(), 
+        0, 0, 
+        size * sizeof(float)
+    );
+    
+    // 確保複製完成
+    opencl_runtime::getInstance().get_queue().finish();
+}
+
+void Dropout::forward(const Tensor& inputs, Tensor& outputs, size_t batch_size){
+    static std::mt19937 rng(std::time(0));
+    unsigned int current_seed = rng();
+    forward_kernel(
+        cl::EnqueueArgs(
+            opencl_runtime::getInstance().get_queue(),
+            cl::NDRange(size*batch_size)
+        ),
+        inputs.getBuffer(),
+        outputs.getBuffer(),
+        masks,
+        p,
+        current_seed,
+        size*batch_size
+    );
+    opencl_runtime::getInstance().get_queue().finish();
+}
+
+void Dropout::backward(const Tensor& grad_outputs, const Tensor& inputs, Tensor& grad_inputs, size_t batch_size){
+    backward_kernel(
+        cl::EnqueueArgs(
+            opencl_runtime::getInstance().get_queue(),
+            cl::NDRange(size*batch_size)
+        ),
+        grad_outputs.getBuffer(),
+        masks,
+        grad_inputs.getBuffer(),
+        p,
+        size*batch_size
+    );
+    opencl_runtime::getInstance().get_queue().finish();
+}
+void Dropout::pass_parameters(std::vector<Tensor*>& params, std::vector<Tensor*>& grads){
+    //a
+}
+void Dropout::get_tensor(std::vector<Tensor*>& inputs, size_t batch_size){
+    if(batch_size == 0) {
+        inputs.push_back(new Tensor({(size_t)size}));
+        return;
+    }
+    masks = cl::Buffer(opencl_runtime::getInstance().get_context(), CL_MEM_READ_WRITE, size*batch_size * sizeof(float));
+    inputs.push_back(new Tensor({batch_size, (size_t)size}));
+}
+std::string Dropout::get_name() const {
+    return "Dropout " + std::to_string(size) + " with p " + std::to_string(p);
 }
 
 
@@ -478,4 +550,141 @@ void Softmax::get_tensor(std::vector<Tensor*>& inputs, size_t batch_size) {
 }
 std::string Softmax::get_name() const {
     return "Softmax " + std::to_string(size);
+}
+
+//batch_normalization
+
+BN::BN(size_t size_, float p_) :
+    size(size_),
+    p(p_),
+    forward_kernel_mean_sqrtvar(opencl_runtime::getInstance().get_program(), "BN_forward_mean_sqrtVar"),
+    forward_kernel(opencl_runtime::getInstance().get_program(), "BN_forward"),
+    backward_kernel_gb(opencl_runtime::getInstance().get_program(), "BN_backward_gb"),
+    backward_kernel_inputs(opencl_runtime::getInstance().get_program(), "BN_backward_inputs"),
+    means(opencl_runtime::getInstance().get_context(), CL_MEM_READ_WRITE, size * sizeof(float)),
+    sqrtVars(opencl_runtime::getInstance().get_context(), CL_MEM_READ_WRITE, size * sizeof(float)),
+    AvMeans(opencl_runtime::getInstance().get_context(), CL_MEM_READ_WRITE, size * sizeof(float)),
+    AvSVs(opencl_runtime::getInstance().get_context(), CL_MEM_READ_WRITE, size * sizeof(float)),
+    gammas({size_}),
+    grad_gammas({size_}),
+    betas({size_}),
+    grad_betas({size_})
+{
+    for(size_t i = 0; i < size; i++) {
+        gammas.set({i}, 1.0f);
+        
+        betas.set({i}, 0.0f);
+    }
+    
+    gammas.toGPU();
+    betas.toGPU();
+    grad_gammas.toGPU();
+    grad_betas.toGPU();
+}
+
+void BN::predict(const Tensor& inputs, Tensor& outputs){
+    forward_kernel(
+        cl::EnqueueArgs(
+            opencl_runtime::getInstance().get_queue(),
+            cl::NDRange(size, 1)
+        ),
+        inputs.getBuffer(),
+        outputs.getBuffer(),
+        AvMeans,
+        AvSVs,
+        gammas.getBuffer(),
+        betas.getBuffer(),
+        size,
+        1
+    );
+    opencl_runtime::getInstance().get_queue().finish();
+}
+
+void BN::forward(const Tensor& inputs, Tensor& outputs, size_t batch_size){
+    forward_kernel_mean_sqrtvar(
+        cl::EnqueueArgs(
+            opencl_runtime::getInstance().get_queue(),
+            cl::NDRange(size)
+        ),
+        inputs.getBuffer(),
+        means,
+        sqrtVars,
+        AvMeans,
+        AvSVs,
+        p,
+        size,
+        batch_size
+    );
+    opencl_runtime::getInstance().get_queue().finish();
+
+
+    forward_kernel(
+        cl::EnqueueArgs(
+            opencl_runtime::getInstance().get_queue(),
+            cl::NDRange(size, batch_size)
+        ),
+        inputs.getBuffer(),
+        outputs.getBuffer(),
+        means,
+        sqrtVars,
+        gammas.getBuffer(),
+        betas.getBuffer(),
+        size,
+        batch_size
+    );
+    opencl_runtime::getInstance().get_queue().finish();
+}
+
+void BN::backward(const Tensor& grad_outputs, const Tensor& inputs, Tensor& grad_inputs, size_t batch_size){
+    backward_kernel_gb(
+        cl::EnqueueArgs(
+            opencl_runtime::getInstance().get_queue(),
+            cl::NDRange(size)
+        ),
+        grad_outputs.getBuffer(),
+        inputs.getBuffer(),
+        means,
+        sqrtVars,
+        grad_gammas.getBuffer(),
+        grad_betas.getBuffer(),
+        size,
+        batch_size
+    );
+
+    backward_kernel_inputs(
+        cl::EnqueueArgs(
+            opencl_runtime::getInstance().get_queue(),
+            cl::NDRange(size)
+        ),
+        grad_outputs.getBuffer(),
+        inputs.getBuffer(),
+        gammas.getBuffer(),
+        means,
+        sqrtVars,
+        grad_inputs.getBuffer(),
+        size,
+        batch_size
+    );
+
+    opencl_runtime::getInstance().get_queue().finish();
+}
+
+void BN::pass_parameters(std::vector<Tensor*>& params, std::vector<Tensor*>& grads){
+    params.push_back(&gammas);
+    params.push_back(&betas);
+    grads.push_back(&grad_gammas);
+    grads.push_back(&grad_betas);
+}
+
+void BN::get_tensor(std::vector<Tensor*>& inputs, size_t batch_size){
+    if(batch_size == 0) {
+        inputs.push_back(new Tensor({(size_t)size}));
+        return;
+    }
+    
+    inputs.push_back(new Tensor({batch_size, (size_t)size}));
+}
+
+std::string BN::get_name() const {
+    return "Batch_Normalization " + std::to_string(size);
 }

@@ -18,7 +18,7 @@ void test_print() {
 }
 
 void initialize_opencl() {
-    py::print("gaga(version:2.2)");
+    py::print("gaga(version:2.7)");
 
     opencl_runtime::getInstance().initialize();
     py::print("OpenCL Runtime Initialized", py::arg("flush")=true);
@@ -88,6 +88,8 @@ PYBIND11_MODULE(monke_frame, m) {
 
     py::class_<Scale, Layer>(m, "Scale")
         .def(py::init<size_t, float>(), py::arg("size"), py::arg("scale_factor") = 1.0f);
+    py::class_<Dropout, Layer>(m, "Dropout")
+        .def(py::init<size_t, float>(), py::arg("size"), py::arg("p"));
 
     py::class_<Dense, Layer>(m, "Dense")
         .def(py::init<size_t, size_t>(), py::arg("input_size"), py::arg("output_size"));
@@ -100,6 +102,9 @@ PYBIND11_MODULE(monke_frame, m) {
 
     py::class_<Softmax, Layer>(m, "Softmax")
         .def(py::init<size_t>(), py::arg("size"));
+    
+    py::class_<BN, Layer>(m, "BN")
+        .def(py::init<size_t, float>(), py::arg("size"), py::arg("p") = 0.1f);
 
     // Loss
     py::class_<Loss>(m, "Loss");  // Base 

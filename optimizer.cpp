@@ -1,4 +1,5 @@
 #include "optimizer.hpp"
+#include <cmath>
 
 // GD
 GD::GD() : gd_update_kernel(opencl_runtime::getInstance().get_program(), "gd_update"), zero_grad_kernel(opencl_runtime::getInstance().get_program(), "set_to_zero") {}
@@ -42,7 +43,8 @@ void Adam::update(std::vector<Tensor*> parameters, std::vector<Tensor*> grad_par
             beta1,
             beta2,
             epsilon,
-            t,
+            std::pow(beta1,t),
+            std::pow(beta2,t),
             learning_rate,
             parameters[i]->getTotalSize()
         );

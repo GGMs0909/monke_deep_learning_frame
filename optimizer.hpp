@@ -25,7 +25,7 @@ private:
     int t;
     std::vector<Tensor*> m; // first moment
     std::vector<Tensor*> v; // second moment
-    cl::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, float, float, float, int, float, int> adam_update_kernel;
+    cl::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, float, float, float, float, float, float, int> adam_update_kernel;
     cl::make_kernel<cl::Buffer, int> zero_grad_kernel;
 
 public:

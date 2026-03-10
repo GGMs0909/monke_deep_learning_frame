@@ -30,6 +30,26 @@ public:
     std::string get_name() const override;
 };
 
+class Dropout : public Layer {
+private:
+    int size;
+    float p;
+    cl::Buffer masks;
+    cl::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer, float, unsigned int, int> forward_kernel;
+    cl::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer, float, int> backward_kernel;
+public:
+    Dropout(size_t size_, float p_);
+    void predict(const Tensor& inputs, Tensor& outputs) override;
+    void forward(const Tensor& inputs, Tensor& outputs, size_t batch_size) override;
+    void backward(const Tensor& grad_outputs, const Tensor& inputs, Tensor& grad_inputs, size_t batch_size) override;
+    void pass_parameters(std::vector<Tensor*>& params, std::vector<Tensor*>& grads) override;
+    void get_tensor(std::vector<Tensor*>& inputs, size_t batch_size) override;
+    std::string get_name() const override;
+};
+
+
+
+
 class Dense : public Layer {
 private:
     int input_size;
@@ -99,6 +119,34 @@ private:
     cl::make_kernel<cl::Buffer,cl::Buffer,cl::Buffer,int,int> backward_kernel;
 public:
     Softmax(size_t size_);
+    void predict(const Tensor& inputs, Tensor& outputs) override;
+    void forward(const Tensor& inputs, Tensor& outputs, size_t batch_size) override;
+    void backward(const Tensor& grad_outputs, const Tensor& inputs, Tensor& grad_inputs, size_t batch_size) override;
+    void pass_parameters(std::vector<Tensor*>& params, std::vector<Tensor*>& grads) override;
+    void get_tensor(std::vector<Tensor*>& inputs, size_t batch_size) override;
+    std::string get_name() const override;
+};
+
+//batch_normalization
+
+class BN : public Layer{
+private:
+    int size;
+    float p;
+    cl::Buffer means;
+    cl::Buffer sqrtVars;
+    cl::Buffer AvMeans;
+    cl::Buffer AvSVs;
+    Tensor gammas;
+    Tensor grad_gammas;
+    Tensor betas;
+    Tensor grad_betas;
+    cl::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, float, int, int> forward_kernel_mean_sqrtvar;
+    cl::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, int, int> forward_kernel;
+    cl::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, int, int> backward_kernel_gb;
+    cl::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, int, int> backward_kernel_inputs;
+public:
+    BN(size_t size_, float p_ = 0.1);
     void predict(const Tensor& inputs, Tensor& outputs) override;
     void forward(const Tensor& inputs, Tensor& outputs, size_t batch_size) override;
     void backward(const Tensor& grad_outputs, const Tensor& inputs, Tensor& grad_inputs, size_t batch_size) override;
